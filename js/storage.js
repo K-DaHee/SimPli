@@ -38,5 +38,20 @@ const Storage = {
     async getFolder(id) {
         const folders = await this.getFolders();
         return folders.find(f => f.id === id) || null;
+    },
+
+    // 특정 폴더에 음악 추가하기
+    async addSongToFolder(folderId, songObj) {
+        const folders = await this.getFolders();
+        const folderIndex = folders.findIndex(f => f.id === folderId);
+
+        if (folderIndex > -1) {
+            // 고유 식별자 추가해서 리스트에 푸시
+            folders[folderIndex].songs.push({
+                ...songObj,
+                localId: 'song_' + Date.now().toString()
+            });
+            await this.saveFolders(folders);
+        }
     }
 };
