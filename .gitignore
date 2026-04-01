@@ -1,0 +1,62 @@
+# ======================================================================
+# 🚀 SimPli Project - Comprehensive .gitignore
+# ======================================================================
+
+# 블로그 작성용 기획안 및 포스트 폴더 무시
+posts/
+
+# 압축 파일, 빌드 결과, 캐시 파일 등
+*.crx
+*.zip
+dist/
+dist-zip/
+build/
+out/
+.cache/
+coverage/
+
+# 환경 변수 및 중요 보안/인증 키 (Security & Environments)
+# API Keys, Firebase/Supabase 설정키
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+firebase.json
+.firebaserc
+
+# 패키지 모듈 및 시스템(NPM, Yarn 등)
+node_modules/
+jspm_packages/
+.npm/
+.yarn/
+
+# 로그 파일 (Logs)
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 운영체제 생성 파일 (OS Generated)
+# Mac & Windows
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDE 및 에디터 (IDEs & Editors)
+# VSCode, IntelliJ (WebStorm) 등
+.vscode/
+.idea/
+.project
+.settings/
+*.swp
+*.swo
+*.sublime-workspace
