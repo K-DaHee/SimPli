@@ -1,32 +1,399 @@
-/* 기본 리셋 및 팝업 사이즈 고정 */
+/* =========================================
+   SimPli 핵심 스타일 속성 (CSS Variables) 
+========================================= */
+:root {
+    /* 밝고 산뜻한 배경 그래디언트 */
+    --bg-gradient: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
+
+    /* 브랜드 컬러 포인트 (코발트 블루) */
+    --primary-color: #3b82f6;
+
+    /* 밝은 테마에 맞춘 텍스트 색상 */
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+}
+
+/* =========================================
+   기본 리셋 및 컨테이너
+========================================= */
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  width: 400px;
-  height: 600px;
-  background-color: #1a1a1a;
-  color: #ffffff;
-  font-family: 'Pretendard', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    width: 400px;
+    height: 600px;
+    background: var(--bg-gradient);
+    color: var(--text-primary);
+    font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    overflow: hidden;
 }
 
+/* 밝은 테마용 컨테이너 처리 */
+.glass-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+}
+
+/* =========================================
+   헤더 (Header)
+========================================= */
 .header {
-  padding: 16px;
-  border-bottom: 1px solid #333;
+    padding: 20px 20px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    /* 경계선 부드럽게 */
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logo-icon {
+    color: var(--primary-color);
+    font-size: 28px;
 }
 
 .header h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  background: linear-gradient(90deg, #ff8a00, #e52e71);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
 }
 
+/* =========================================
+   메인 콘텐츠 및 뷰 (Content area)
+========================================= */
 .content {
-  padding: 16px;
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* 뷰 전환 처리 */
+.view {
+    display: none;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.view.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 뷰 내부 제목 (폴더명 등) */
+.folder-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.folder-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.current-folder-name {
+    flex: 1;
+    margin: 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+/* 공통 액션 버튼 (새폴더, 뒤로가기 등) */
+.action-btn {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.action-btn:hover {
+    background: #f8fafc;
+    color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* =========================================
+   폴더 리스트 뷰 (View A)
+========================================= */
+.folder-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.folder-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 14px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.folder-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.folder-icon {
+    color: #94a3b8;
+    transition: 0.2s;
+}
+
+.folder-item:hover .folder-icon {
+    color: var(--primary-color);
+}
+
+.folder-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* =========================================
+   폴더 상세 뷰 - 음악 추가 영역 (View B)
+========================================= */
+.add-song-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.input-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group input {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--text-primary);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.2s;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.input-group input::placeholder {
+    color: #94a3b8;
+}
+
+.input-group input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+#btn-add-song {
+    background: var(--primary-color);
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    width: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+}
+
+#btn-add-song:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* =========================================
+   폴더 상세 뷰 - 플레이리스트 곡 목록
+========================================= */
+.song-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.song-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+    padding: 10px 14px;
+    transition: all 0.2s;
+}
+
+.song-item:hover {
+    background: #f8fafc;
+}
+
+.song-item.playing {
+    border-left: 3px solid var(--primary-color);
+    background: #eff6ff;
+    /* 코발트 블루톤에 맞춘 옅은 배경 */
+    border-color: #dbeafe;
+}
+
+.song-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.song-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.song-artist {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.play-song-btn {
+    background: none;
+    border: none;
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 24px;
+    padding: 0;
+    transition: 0.2s;
+}
+
+.play-song-btn:hover {
+    color: var(--primary-color);
+}
+
+.playing-indicator {
+    color: var(--primary-color);
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.4;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* =========================================
+   하단 플레이어 컨트롤 프레임
+========================================= */
+.player {
+    height: 70px;
+    background: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.02);
+}
+
+.player-info {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 16px;
+}
+
+.track-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.player-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.ctrl-btn {
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+}
+
+.ctrl-btn span {
+    font-size: 28px;
+    transition: 0.2s;
+}
+
+.ctrl-btn:hover span {
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.play-pause span {
+    font-size: 42px;
+    color: var(--primary-color);
 }

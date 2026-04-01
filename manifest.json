@@ -1,20 +1,20 @@
 {
-  "manifest_version": 3,
-  "name": "SimPli",
-  "version": "1.0",
-  "description": "가장 심플하고 강력한 나만의 유튜브 플레이리스트 & 백그라운드 오디오 플레이어",
-  "permissions": [
-    "storage",
-    "offscreen"
-  ],
-  "host_permissions": [
-    "https://*.youtube.com/*",
-    "https://www.googleapis.com/*"
-  ],
-  "action": {
-    "default_popup": "html/popup.html"
-  },
-  "background": {
-    "service_worker": "js/background.js"
-  }
+    "manifest_version": 3,
+    "name": "SimPli",
+    "version": "1.0",
+    "description": "심플한 나만의 플레이리스트 & 백그라운드 오디오 플레이어",
+    "permissions": [
+        "storage",
+        "offscreen"
+    ],
+    "host_permissions": [
+        "https://*.youtube.com/*",
+        "https://www.googleapis.com/*"
+    ],
+    "action": {
+        "default_popup": "html/popup.html"
+    },
+    "background": {
+        "service_worker": "js/background.js"
+    }
 }

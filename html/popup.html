@@ -1,21 +1,121 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
-  <meta charset="UTF-8">
-  <title>SimPli 메인 팝업</title>
-  <link rel="stylesheet" href="../css/popup.css">
+    <meta charset="UTF-8">
+    <title>SimPli 메인 팝업</title>
+    <!-- Pretendard 폰트 -->
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/variable/pretendardvariable.css" />
+    <!-- 구글 머티리얼 아이콘 팩 -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="../css/popup.css">
 </head>
+
 <body>
-  <div id="app">
-    <header class="header">
-      <h1>SimPli</h1>
-    </header>
-    <main class="content">
-      <p>SimPli 확장프로그램 정상 로드 완료!</p>
-    </main>
-  </div>
-  
-  <!-- UI 이벤트 컨트롤러 -->
-  <script src="../js/popup.js"></script>
+    <div class="glass-container">
+
+        <!-- 앱 헤더 및 로고 -->
+        <header class="header">
+            <div class="logo-container">
+                <span class="material-icons-round logo-icon">queue_music</span>
+                <h1>SimPli</h1>
+            </div>
+        </header>
+
+        <!-- 메인 컨텐츠 영역 -->
+        <main class="content">
+
+            <!-- 뷰 A: 메인 화면 (폴더(플레이리스트) 목록) -->
+            <section id="view-folder-list" class="view active">
+                <div class="folder-header">
+                    <h2>내 플레이리스트</h2>
+                    <button class="action-btn" id="btn-add-folder" title="새 폴더 만들기">
+                        <span class="material-icons-round">create_new_folder</span>
+                    </button>
+                </div>
+
+                <ul class="folder-list" id="folder-list">
+                    <!-- 예시 폴더 퍼블리싱 (추후 JS로 동적 렌더링됨) -->
+                    <!-- 폴더 클릭 시 디테일 뷰로 이동하는 예시 (스타일 확인용 인라인 스크립트) -->
+                    <li class="folder-item"
+                        onclick="document.getElementById('view-folder-list').classList.remove('active'); document.getElementById('view-playlist-detail').classList.add('active');">
+                        <span class="material-icons-round folder-icon">folder</span>
+                        <span class="folder-name">드라이브 갈 때 듣는 노래 🚗</span>
+                    </li>
+                    <li class="folder-item">
+                        <span class="material-icons-round folder-icon">folder</span>
+                        <span class="folder-name">코딩할 때 듣는 로파이 💻</span>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 뷰 B: 특정 폴더 진입 화면 (음악 추가 및 재생 목록) -->
+            <section id="view-playlist-detail" class="view">
+                <div class="folder-header">
+                    <button class="action-btn" id="btn-back" title="뒤로 가기"
+                        onclick="document.getElementById('view-playlist-detail').classList.remove('active'); document.getElementById('view-folder-list').classList.add('active');">
+                        <span class="material-icons-round">arrow_back_ios_new</span>
+                    </button>
+                    <h2 class="current-folder-name">드라이브 갈 때 듣는 노래 🚗</h2>
+                    <button class="action-btn" id="btn-folder-options">
+                        <span class="material-icons-round">more_vert</span>
+                    </button>
+                </div>
+
+                <!-- 핵심 요소: 가수/제목 직접 입력 추가 폼 -->
+                <div class="add-song-container">
+                    <div class="input-group">
+                        <input type="text" id="input-artist" placeholder="가수명 입력" autocomplete="off">
+                        <input type="text" id="input-title" placeholder="노래 제목 입력" autocomplete="off">
+                    </div>
+                    <!-- 추가 버튼을 누르면 백그라운드에서 API통해 첫번째 결과의 Audio를 연결하는 원리! -->
+                    <button id="btn-add-song" title="음악 자동 연결하여 리스트에 추가">
+                        <span class="material-icons-round">add</span>
+                    </button>
+                </div>
+
+                <!-- 플레이리스트 (폴더 안의 추가된 곡 목록) -->
+                <ul class="song-list" id="song-list">
+                    <!-- 예시 곡 아이템 1 -->
+                    <li class="song-item">
+                        <div class="song-info">
+                            <span class="song-title">Hype Boy</span>
+                            <span class="song-artist">NewJeans</span>
+                        </div>
+                        <button class="play-song-btn"><span class="material-icons-round">play_arrow</span></button>
+                    </li>
+                    <!-- 예시 곡 아이템 2 (현재 재생중인 곡 표시) -->
+                    <li class="song-item playing">
+                        <div class="song-info">
+                            <span class="song-title">Perfect Night</span>
+                            <span class="song-artist">LE SSERAFIM</span>
+                        </div>
+                        <div class="playing-indicator">
+                            <span class="material-icons-round">equalizer</span>
+                        </div>
+                    </li>
+                </ul>
+            </section>
+
+        </main>
+
+        <!-- 하단 고정 오디오 플레이어 컨트롤 -->
+        <footer class="player" id="player-container">
+            <div class="player-info">
+                <p class="track-title">Perfect Night - LE SSERAFIM</p>
+            </div>
+            <div class="player-controls">
+                <button class="ctrl-btn"><span class="material-icons-round">skip_previous</span></button>
+                <button class="ctrl-btn play-pause"><span class="material-icons-round">pause</span></button>
+                <button class="ctrl-btn"><span class="material-icons-round">skip_next</span></button>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- UI 이벤트 컨트롤러 -->
+    <script src="../js/popup.js"></script>
 </body>
+
 </html>
