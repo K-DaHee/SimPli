@@ -26,75 +26,59 @@
         <!-- 메인 컨텐츠 영역 -->
         <main class="content">
 
-            <!-- 뷰 A: 메인 화면 (폴더(플레이리스트) 목록) -->
+            <!-- 메인 화면 (폴더 목록) -->
             <section id="view-folder-list" class="view active">
                 <div class="folder-header">
                     <h2>내 플레이리스트</h2>
-                    <button class="action-btn" id="btn-add-folder" title="새 폴더 만들기">
+                    <button class="action-btn" id="btn-add-folder" title="새 폴더 창 열기">
                         <span class="material-icons-round">create_new_folder</span>
                     </button>
                 </div>
 
+                <!-- 커스텀 폴더 이름 입력창 -->
+                <div class="add-folder-container" id="add-folder-container" style="display: none;">
+                    <div class="input-group-folder">
+                        <input type="text" id="input-folder-name" placeholder="새 플레이리스트 이름" autocomplete="off">
+                    </div>
+                    <button id="btn-submit-folder" class="submit-btn" title="폴더 생성">
+                        <span class="material-icons-round">check</span>
+                    </button>
+                    <button id="btn-cancel-folder" class="cancel-btn" title="취소">
+                        <span class="material-icons-round">close</span>
+                    </button>
+                </div>
+
                 <ul class="folder-list" id="folder-list">
-                    <!-- 예시 폴더 퍼블리싱 (추후 JS로 동적 렌더링됨) -->
-                    <!-- 폴더 클릭 시 디테일 뷰로 이동하는 예시 (스타일 확인용 인라인 스크립트) -->
-                    <li class="folder-item"
-                        onclick="document.getElementById('view-folder-list').classList.remove('active'); document.getElementById('view-playlist-detail').classList.add('active');">
-                        <span class="material-icons-round folder-icon">folder</span>
-                        <span class="folder-name">드라이브 갈 때 듣는 노래 🚗</span>
-                    </li>
-                    <li class="folder-item">
-                        <span class="material-icons-round folder-icon">folder</span>
-                        <span class="folder-name">코딩할 때 듣는 로파이 💻</span>
-                    </li>
+                    <!-- JS로 동적 렌더링 -->
                 </ul>
             </section>
 
-            <!-- 뷰 B: 특정 폴더 진입 화면 (음악 추가 및 재생 목록) -->
+            <!-- 특정 폴더 진입 화면 -->
             <section id="view-playlist-detail" class="view">
                 <div class="folder-header">
-                    <button class="action-btn" id="btn-back" title="뒤로 가기"
-                        onclick="document.getElementById('view-playlist-detail').classList.remove('active'); document.getElementById('view-folder-list').classList.add('active');">
+                    <button class="action-btn" id="btn-back" title="뒤로 가기">
                         <span class="material-icons-round">arrow_back_ios_new</span>
                     </button>
-                    <h2 class="current-folder-name">드라이브 갈 때 듣는 노래 🚗</h2>
+                    <h2 class="current-folder-name">폴더명</h2>
                     <button class="action-btn" id="btn-folder-options">
                         <span class="material-icons-round">more_vert</span>
                     </button>
                 </div>
 
-                <!-- 핵심 요소: 가수/제목 직접 입력 추가 폼 -->
+                <!-- 가수/제목 직접 입력 추가 폼 -->
                 <div class="add-song-container">
                     <div class="input-group">
                         <input type="text" id="input-artist" placeholder="가수명 입력" autocomplete="off">
                         <input type="text" id="input-title" placeholder="노래 제목 입력" autocomplete="off">
                     </div>
-                    <!-- 추가 버튼을 누르면 백그라운드에서 API통해 첫번째 결과의 Audio를 연결하는 원리! -->
                     <button id="btn-add-song" title="음악 자동 연결하여 리스트에 추가">
                         <span class="material-icons-round">add</span>
                     </button>
                 </div>
 
-                <!-- 플레이리스트 (폴더 안의 추가된 곡 목록) -->
+                <!-- 플레이리스트 -->
                 <ul class="song-list" id="song-list">
-                    <!-- 예시 곡 아이템 1 -->
-                    <li class="song-item">
-                        <div class="song-info">
-                            <span class="song-title">Hype Boy</span>
-                            <span class="song-artist">NewJeans</span>
-                        </div>
-                        <button class="play-song-btn"><span class="material-icons-round">play_arrow</span></button>
-                    </li>
-                    <!-- 예시 곡 아이템 2 (현재 재생중인 곡 표시) -->
-                    <li class="song-item playing">
-                        <div class="song-info">
-                            <span class="song-title">Perfect Night</span>
-                            <span class="song-artist">LE SSERAFIM</span>
-                        </div>
-                        <div class="playing-indicator">
-                            <span class="material-icons-round">equalizer</span>
-                        </div>
-                    </li>
+                    <!-- JS로 동적 렌더링 -->
                 </ul>
             </section>
 
@@ -103,11 +87,11 @@
         <!-- 하단 고정 오디오 플레이어 컨트롤 -->
         <footer class="player" id="player-container">
             <div class="player-info">
-                <p class="track-title">Perfect Night - LE SSERAFIM</p>
+                <p class="track-title">선택된 곡 없음</p>
             </div>
             <div class="player-controls">
                 <button class="ctrl-btn"><span class="material-icons-round">skip_previous</span></button>
-                <button class="ctrl-btn play-pause"><span class="material-icons-round">pause</span></button>
+                <button class="ctrl-btn play-pause"><span class="material-icons-round">play_arrow</span></button>
                 <button class="ctrl-btn"><span class="material-icons-round">skip_next</span></button>
             </div>
         </footer>
@@ -115,6 +99,7 @@
     </div>
 
     <!-- UI 이벤트 컨트롤러 -->
+    <script src="../js/storage.js"></script>
     <script src="../js/popup.js"></script>
 </body>
 

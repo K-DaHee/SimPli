@@ -49,7 +49,6 @@ body {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    /* 경계선 부드럽게 */
 }
 
 .logo-container {
@@ -133,6 +132,7 @@ body {
 .action-btn {
     background: #ffffff;
     border: 1px solid rgba(0, 0, 0, 0.08);
+    /* 밝은 테마 테두리 */
     color: var(--text-secondary);
     border-radius: 8px;
     width: 32px;
@@ -153,7 +153,74 @@ body {
 }
 
 /* =========================================
-   폴더 리스트 뷰 (View A)
+   새 폴더 추가 뷰 UI
+========================================= */
+.add-folder-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.input-group-folder {
+    flex: 1;
+}
+
+.input-group-folder input {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.input-group-folder input:focus {
+    border-color: var(--primary-color);
+}
+
+.submit-btn {
+    background: var(--primary-color);
+    border: none;
+    color: #fff;
+    border-radius: 6px;
+    width: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.submit-btn:hover {
+    background: #2563eb;
+}
+
+.cancel-btn {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--text-secondary);
+    border-radius: 6px;
+    width: 36px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.cancel-btn:hover {
+    background: #e2e8f0;
+}
+
+/* =========================================
+   폴더 리스트 뷰
 ========================================= */
 .folder-list {
     list-style: none;
@@ -199,7 +266,7 @@ body {
 }
 
 /* =========================================
-   폴더 상세 뷰 - 음악 추가 영역 (View B)
+   폴더 상세 뷰 (음악 추가 영역)
 ========================================= */
 .add-song-container {
     display: flex;
@@ -259,7 +326,7 @@ body {
 }
 
 /* =========================================
-   폴더 상세 뷰 - 플레이리스트 곡 목록
+   폴더 상세 뷰 (플레이리스트 곡 목록)
 ========================================= */
 .song-list {
     list-style: none;
@@ -288,7 +355,6 @@ body {
 .song-item.playing {
     border-left: 3px solid var(--primary-color);
     background: #eff6ff;
-    /* 코발트 블루톤에 맞춘 옅은 배경 */
     border-color: #dbeafe;
 }
 
@@ -330,7 +396,7 @@ body {
 
 @keyframes pulse {
     0% {
-        opacity: 0.4;
+        opacity: 0.5;
     }
 
     100% {
