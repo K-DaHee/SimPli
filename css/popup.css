@@ -1,0 +1,32 @@
+/* 기본 리셋 및 팝업 사이즈 고정 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 400px;
+  height: 600px;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-family: 'Pretendard', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.header {
+  padding: 16px;
+  border-bottom: 1px solid #333;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(90deg, #ff8a00, #e52e71);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.content {
+  padding: 16px;
+}
