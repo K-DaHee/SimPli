@@ -6,6 +6,10 @@
 // 오프스크린 문서 경로
 const OFFSCREEN_DOCUMENT_PATH = '/html/offscreen.html';
 
+// 팝업 재접속 시 UI 동기화용 전역 재생 상태
+let currentSong = { videoId: null, title: '선택된 곡 없음', artist: '', duration: 0 };
+let lastActiveFolderId = null; // 마지막으로 보고 있던 폴더 ID
+
 /**
  * 오프스크린 문서가 존재하지 않으면 생성
  */
@@ -32,6 +36,12 @@ async function setupOffscreenDocument() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     switch (message.type) {
         case 'PLAY_SONG':
+            currentSong = {
+                videoId: message.videoId,
+                title: message.title,
+                artist: message.artist,
+                duration: message.duration || 0
+            };
             setupOffscreenDocument().then(() => {
                 chrome.runtime.sendMessage({
                     target: 'offscreen',
@@ -42,6 +52,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             });
             // 재생 시작 명령은 즉시 확인 응답
             sendResponse({ status: 'playing' });
+            break;
+
+        case 'GET_CURRENT_STATE':
+            // 팝업 재오픈 시 현재 재생 곡 정보 및 마지막 폴더 ID 반환
+            sendResponse({ currentSong, lastActiveFolderId });
+            break;
+
+        case 'SET_ACTIVE_FOLDER':
+            // 현재 보고 있는 폴더 ID 업데이트
+            lastActiveFolderId = message.folderId;
+            sendResponse({ status: 'ok' });
             break;
 
         case 'PAUSE_SONG':

@@ -41,6 +41,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentPlayingVideoId = null;
     let isEditMode = false; // 편집 모드 (삭제 아이콘 표시 여부)
 
+    // 팝업 재오픈 시 백그라운드에서 현재 재생 상태 및 마지막 뷰 동기화
+    chrome.runtime.sendMessage({ type: 'GET_CURRENT_STATE' }, (res) => {
+        if (res) {
+            // 현재 재생 중인 곡이 있으면 UI 갱신
+            if (res.currentSong && res.currentSong.videoId) {
+                currentPlayingVideoId = res.currentSong.videoId;
+                isPlayingGlobal = true;
+                trackTitleUI.textContent = `${res.currentSong.title} - ${res.currentSong.artist}`;
+                masterPlayBtn.textContent = 'pause';
+            }
+            // 마지막으로 보고 있던 폴더가 있으면 해당 뷰로 즉시 이동
+            if (res.lastActiveFolderId) {
+                showPlaylistDetailView(res.lastActiveFolderId);
+            }
+        }
+    });
+
     // 오프스크린으로부터 재생 진행률 수신 및 프로그레스 바 갱신
     chrome.runtime.onMessage.addListener((msg) => {
         if (msg.type === 'UPDATE_PROGRESS') {
@@ -69,6 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
      */
     function showFolderListView() {
         currentActiveFolderId = null;
+        chrome.runtime.sendMessage({ type: 'SET_ACTIVE_FOLDER', folderId: null }); // 상태 리셋
         viewPlaylistDetail.classList.remove('active');
         viewFolderList.classList.add('active');
 
@@ -87,6 +105,7 @@ document.addEventListener('DOMContentLoaded', async () => {
      */
     async function showPlaylistDetailView(folderId) {
         currentActiveFolderId = folderId;
+        chrome.runtime.sendMessage({ type: 'SET_ACTIVE_FOLDER', folderId: folderId }); // 현재 폴더 기록
         const folder = await Storage.getFolder(folderId);
         if (!folder) return;
 
