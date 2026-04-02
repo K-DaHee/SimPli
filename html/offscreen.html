@@ -6,11 +6,10 @@
 </head>
 
 <body>
-    <!-- YouTube IFrame API가 렌더링될 컨테이너 요소 -->
+    <!-- YouTube iframe이 마운트될 컨테이너 -->
     <div id="youtube-player"></div>
     <script src="../js/offscreen.js"></script>
-    <!-- YouTube IFrame Player API 외부 스크립트 로드 -->
-    <script src="https://www.youtube.com/iframe_api"></script>
+    <!-- 외부 youtube iframe_api 스크립트 제거 (MV3 CSP 차단 대상) -->
 </body>
 
 </html>

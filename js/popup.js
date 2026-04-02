@@ -41,17 +41,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentPlayingVideoId = null;
     let isEditMode = false; // 편집 모드 (삭제 아이콘 표시 여부)
 
-    // 팝업 재오픈 시 백그라운드에서 현재 재생 상태 동기화
-    chrome.runtime.sendMessage({ type: 'GET_CURRENT_STATE' }, (res) => {
-        if (res && res.currentSong && res.currentSong.videoId) {
-            currentPlayingVideoId = res.currentSong.videoId;
-            isPlayingGlobal = true;
-            trackTitleUI.textContent = `${res.currentSong.title} - ${res.currentSong.artist}`;
-            masterPlayBtn.textContent = 'pause';
-            if (currentActiveFolderId) renderSongs(currentActiveFolderId);
-        }
-    });
-
     // 오프스크린으로부터 재생 진행률 수신 및 프로그레스 바 갱신
     chrome.runtime.onMessage.addListener((msg) => {
         if (msg.type === 'UPDATE_PROGRESS') {
@@ -161,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <button class="delete-song-btn" data-localid="${song.localId}" style="background:none; border:none; cursor:pointer; color:#ef4444; display:${isEditMode ? 'flex' : 'none'}; align-items:center;">
                         <span class="material-icons-round" style="font-size:20px;">delete</span>
                     </button>
-                    <button class="play-song-btn" data-vid="${song.videoId}" data-title="${song.title}" data-artist="${song.artist}" style="display:${isEditMode ? 'none' : 'flex'}; align-items:center;">
+                    <button class="play-song-btn" data-vid="${song.videoId}" data-title="${song.title}" data-artist="${song.artist}" data-duration="${song.duration || 0}" style="display:${isEditMode ? 'none' : 'flex'}; align-items:center;">
                         <span class="material-icons-round">${icon}</span>
                     </button>
                 </div>
@@ -185,6 +174,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const vid = btn.getAttribute('data-vid');
                 const title = btn.getAttribute('data-title');
                 const artist = btn.getAttribute('data-artist');
+                const duration = parseInt(btn.getAttribute('data-duration') || 0);
 
                 // 같은 곡 클릭 시 재생/일시정지 토글
                 if (currentPlayingVideoId === vid) {
@@ -201,8 +191,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
 
-                // 새 곡 재생
-                chrome.runtime.sendMessage({ type: 'PLAY_SONG', videoId: vid, title, artist });
+                // 오디오 권한 획득을 위한 무음 재생 (Origin 활성화)
+                const silentAudio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
+                silentAudio.play().catch(() => { });
+
+                chrome.runtime.sendMessage({
+                    type: 'PLAY_SONG',
+                    videoId: vid,
+                    title: title,
+                    artist: artist,
+                    duration: duration
+                });
                 currentPlayingVideoId = vid;
                 isPlayingGlobal = true;
                 trackTitleUI.textContent = `${title} - ${artist}`;
