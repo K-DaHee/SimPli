@@ -1,68 +1,74 @@
 /**
  * Offscreen Document Controller
- * YouTube IFrame API 로드 및 재생/정지 제어 명령 수행
+ * YouTube IFrame API를 통한 백그라운드 오디오 재생 제어
  */
 
-let player;
+let player = null;
 let isPlayerReady = false;
-let queuedVideoId = null;
+let progressInterval = null;
 
-// YouTube IFrame API 스크립트 동적 주입
-const tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-const firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-// 전역 콜백: YouTube IFrame API 로드 완료 시 플레이어 객체 초기화
-window.onYouTubeIframeAPIReady = function () {
+// YouTube IFrame API 로드 완료 후 플레이어 객체 초기화
+function onYouTubeIframeAPIReady() {
     player = new YT.Player('youtube-player', {
         height: '0',
         width: '0',
-        videoId: '',
-        playerVars: {
-            'autoplay': 1,
-            'controls': 0,
-            'playsinline': 1
-        },
+        playerVars: { autoplay: 1 },
         events: {
-            'onReady': onPlayerReady
+            onReady: () => { isPlayerReady = true; },
+            onStateChange: (event) => {
+                // 재생 중일 때만 진행률 폴링 시작
+                if (event.data === YT.PlayerState.PLAYING) {
+                    startProgressPolling();
+                } else {
+                    stopProgressPolling();
+                }
+            }
         }
     });
-};
+}
 
 /**
- * 유튜브 플레이어 초기화 완료 시 호출
+ * 1초 간격으로 현재 재생 위치를 팝업으로 브로드캐스트
  */
-function onPlayerReady(event) {
-    isPlayerReady = true;
-    // 플레이어 준비 전 수신된 예약 곡이 있을 경우 즉시 재생
-    if (queuedVideoId) {
-        player.loadVideoById(queuedVideoId);
-        queuedVideoId = null;
+function startProgressPolling() {
+    stopProgressPolling();
+    progressInterval = setInterval(() => {
+        if (!player || !isPlayerReady) return;
+        const currentTime = player.getCurrentTime();
+        const duration = player.getDuration();
+        if (duration > 0) {
+            chrome.runtime.sendMessage({
+                type: 'UPDATE_PROGRESS',
+                currentTime,
+                duration
+            });
+        }
+    }, 1000);
+}
+
+/**
+ * 진행률 폴링 중단
+ */
+function stopProgressPolling() {
+    if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
     }
 }
 
-// background.js에서 전달하는 재생 제어 메시지 라우팅
+// 백그라운드로부터 재생/일시정지/재개 명령 수신
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.target !== 'offscreen') return;
 
-    switch (message.type) {
-        case 'PLAY_YOUTUBE':
-            if (isPlayerReady && player && typeof player.loadVideoById === 'function') {
-                player.loadVideoById(message.videoId);
-            } else {
-                queuedVideoId = message.videoId;
-            }
-            break;
-        case 'PAUSE_YOUTUBE':
-            if (isPlayerReady && player && typeof player.pauseVideo === 'function') {
-                player.pauseVideo();
-            }
-            break;
-        case 'RESUME_YOUTUBE':
-            if (isPlayerReady && player && typeof player.playVideo === 'function') {
-                player.playVideo();
-            }
-            break;
+    if (message.type === 'PLAY_YOUTUBE') {
+        if (isPlayerReady && player) {
+            player.loadVideoById(message.videoId);
+        }
+    }
+    else if (message.type === 'PAUSE_YOUTUBE') {
+        if (isPlayerReady && player) player.pauseVideo();
+    }
+    else if (message.type === 'RESUME_YOUTUBE') {
+        if (isPlayerReady && player) player.playVideo();
     }
 });

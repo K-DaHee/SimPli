@@ -3,102 +3,124 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>SimPli 메인 팝업</title>
-    <!-- Pretendard 폰트 -->
-    <link rel="stylesheet" as="style" crossorigin
-        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/variable/pretendardvariable.css" />
-    <!-- 구글 머티리얼 아이콘 팩 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimPli</title>
+    <!-- 구글 머티리얼 아이콘 폰트 -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <!-- 프리미엄 디자인용 폰트 (Pretendard) -->
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link rel="stylesheet" href="../css/popup.css">
 </head>
 
 <body>
     <div class="glass-container">
 
-        <!-- 앱 헤더 및 로고 -->
+        <!-- 고정 헤더 -->
         <header class="header">
             <div class="logo-container">
-                <span class="material-icons-round logo-icon">queue_music</span>
+                <span class="material-icons-round logo-icon">graphic_eq</span>
                 <h1>SimPli</h1>
             </div>
+            <button class="action-btn" id="btn-add-folder" title="새 플레이리스트">
+                <span class="material-icons-round">create_new_folder</span>
+            </button>
         </header>
 
-        <!-- 메인 컨텐츠 영역 -->
-        <main class="content">
+        <!-- 스크롤 가능한 메인 컨텐츠 영역 -->
+        <div class="content">
 
-            <!-- 메인 화면 (폴더 목록) -->
-            <section id="view-folder-list" class="view active">
-                <div class="folder-header">
-                    <h2>내 플레이리스트</h2>
-                    <button class="action-btn" id="btn-add-folder" title="새 폴더 창 열기">
-                        <span class="material-icons-round">create_new_folder</span>
-                    </button>
-                </div>
+            <!-- 1. 메인 홈 (폴더 목록 뷰) -->
+            <div id="view-folder-list" class="view active">
 
-                <!-- 커스텀 폴더 이름 입력창 -->
-                <div class="add-folder-container" id="add-folder-container" style="display: none;">
-                    <div class="input-group-folder">
-                        <input type="text" id="input-folder-name" placeholder="새 플레이리스트 이름" autocomplete="off">
+                <!-- 폴더 추가 폼 (기본 숨김) -->
+                <div class="input-card" id="add-folder-container"
+                    style="display: none; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 16px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.05);">
+                    <input type="text" id="input-folder-name" placeholder="새 플레이리스트 이름"
+                        style="width: 100%; border: 1px solid #e2e8f0; padding: 10px 12px; border-radius: 8px; outline: none; font-family: inherit;">
+                    <div style="display: flex; gap: 8px;">
+                        <button class="primary-btn" id="btn-submit-folder"
+                            style="flex:1; background: var(--primary-color); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s;">만들기</button>
+                        <button class="secondary-btn" id="btn-cancel-folder"
+                            style="flex:1; background: #f1f5f9; color: #64748b; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s;">취소</button>
                     </div>
-                    <button id="btn-submit-folder" class="submit-btn" title="폴더 생성">
-                        <span class="material-icons-round">check</span>
-                    </button>
-                    <button id="btn-cancel-folder" class="cancel-btn" title="취소">
-                        <span class="material-icons-round">close</span>
-                    </button>
                 </div>
 
-                <ul class="folder-list" id="folder-list">
-                    <!-- JS로 동적 렌더링 -->
-                </ul>
-            </section>
-
-            <!-- 특정 폴더 진입 화면 -->
-            <section id="view-playlist-detail" class="view">
-                <div class="folder-header">
-                    <button class="action-btn" id="btn-back" title="뒤로 가기">
-                        <span class="material-icons-round">arrow_back_ios_new</span>
-                    </button>
-                    <h2 class="current-folder-name">폴더명</h2>
-                    <button class="action-btn" id="btn-folder-options">
-                        <span class="material-icons-round">more_vert</span>
-                    </button>
-                </div>
-
-                <!-- 가수/제목 직접 입력 추가 폼 -->
-                <div class="add-song-container">
-                    <div class="input-group">
-                        <input type="text" id="input-artist" placeholder="가수명 입력" autocomplete="off">
-                        <input type="text" id="input-title" placeholder="노래 제목 입력" autocomplete="off">
-                    </div>
-                    <button id="btn-add-song" title="음악 자동 연결하여 리스트에 추가">
-                        <span class="material-icons-round">add</span>
-                    </button>
-                </div>
-
-                <!-- 플레이리스트 -->
-                <ul class="song-list" id="song-list">
-                    <!-- JS로 동적 렌더링 -->
-                </ul>
-            </section>
-
-        </main>
-
-        <!-- 하단 고정 오디오 플레이어 컨트롤 -->
-        <footer class="player" id="player-container">
-            <div class="player-info">
-                <p class="track-title">선택된 곡 없음</p>
+                <ul class="folder-list" id="folder-list" style="list-style: none; padding: 0; margin: 0;"></ul>
             </div>
+
+            <!-- 2. 플레이리스트 상세 뷰 -->
+            <div id="view-playlist-detail" class="view">
+
+                <!-- 상단 헤더 위치에 새 노래 추가 아이콘 배치 -->
+                <div class="folder-header">
+                    <button class="action-btn" id="btn-back" title="뒤로가기"><span
+                            class="material-icons-round">arrow_back</span></button>
+                    <h2 class="current-folder-name">플레이리스트</h2>
+
+                    <!-- 상단 헤더 우측: 노래 추가 + 편집(점 세 개) 버튼 -->
+                    <div style="display: flex; gap: 4px;">
+                        <button class="action-btn" id="btn-toggle-add-song" title="새 노래 추가">
+                            <span class="material-icons-round">playlist_add</span>
+                        </button>
+                        <button class="action-btn" id="btn-edit-mode" title="편집" style="color: #94a3b8;">
+                            <span class="material-icons-round">more_vert</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 곡 추가 폼 (빈칸 없이 자연스럽게 떨어짐) -->
+                <div class="input-card" id="add-song-container"
+                    style="display: none; flex-direction: column; gap: 10px; margin-bottom: 20px; padding: 16px; background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.05);">
+                    <input type="text" id="input-artist" placeholder="가수명"
+                        style="width: 100%; border: 1px solid #e2e8f0; padding: 10px 12px; border-radius: 8px; outline: none; font-family: inherit;">
+                    <input type="text" id="input-title" placeholder="노래 제목"
+                        style="width: 100%; border: 1px solid #e2e8f0; padding: 10px 12px; border-radius: 8px; outline: none; margin-bottom: 4px; font-family: inherit;">
+                    <div style="display: flex; gap: 8px;">
+                        <button class="primary-btn" id="btn-add-song"
+                            style="flex:1; background: var(--primary-color); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; display:flex; justify-content:center; align-items:center; gap:4px; transition: 0.2s;">
+                            <span class="material-icons-round" style="font-size: 18px;">search</span> 추가
+                        </button>
+                        <button class="secondary-btn" id="btn-cancel-song"
+                            style="flex:1; background: #f1f5f9; color: #64748b; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s;">접기</button>
+                    </div>
+                </div>
+
+                <ul class="playlist-items" id="song-list" style="list-style: none; padding: 0; margin: 0;"></ul>
+            </div>
+
+        </div> <!-- End of content -->
+
+        <!-- 글로벌 하단 고정 플레이어 -->
+        <footer class="player" id="player-container" style="position: relative; overflow: hidden;">
+            <!-- 재생 진행률 바 -->
+            <div class="progress-bar-container" id="progress-container"
+                style="width:100%; height:3px; background:rgba(0,0,0,0.05); position:absolute; top:0; left:0;">
+                <div class="progress-bar" id="progress-bar"
+                    style="height:100%; width:0%; background:var(--primary-color); transition:width 0.3s linear; border-radius: 0 2px 2px 0;">
+                </div>
+            </div>
+
+            <div class="player-info" style="display:flex; flex-direction:column; justify-content:center;">
+                <p class="track-title"
+                    style="margin-bottom: 2px; font-weight:600; font-size:14px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:140px;">
+                    선택된 곡 없음</p>
+                <p class="track-time" id="track-time"
+                    style="font-size: 11px; color: #94a3b8; margin: 0; font-weight:500;">0:00 / 0:00</p>
+            </div>
+
             <div class="player-controls">
-                <button class="ctrl-btn"><span class="material-icons-round">skip_previous</span></button>
-                <button class="ctrl-btn play-pause"><span class="material-icons-round">play_arrow</span></button>
-                <button class="ctrl-btn"><span class="material-icons-round">skip_next</span></button>
+                <!-- 이전 곡/다음 곡 버튼 복구 (레이아웃 균형용) -->
+                <button class="ctrl-btn" id="btn-prev"><span class="material-icons-round">skip_previous</span></button>
+                <button class="ctrl-btn play-pause" id="btn-master-play"><span
+                        class="material-icons-round">play_arrow</span></button>
+                <button class="ctrl-btn" id="btn-next"><span class="material-icons-round">skip_next</span></button>
             </div>
         </footer>
 
     </div>
 
-    <!-- UI 이벤트 컨트롤러 및 API -->
+    <!-- 스크립트 로드 -->
     <script src="../js/config.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/storage.js"></script>

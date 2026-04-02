@@ -1,12 +1,12 @@
 /**
  * Storage Module
- * chrome.storage.local API 기반 시스템 데이터 CRUD 관리 
+ * chrome.storage.local 기반 폴더/곡 CRUD 관리
  */
 
 const Storage = {
     /**
      * 전체 폴더 목록 조회
-     * @returns {Promise<Array>} 폴더 객체 배열
+     * @returns {Promise<Array>} 저장된 폴더 배열
      */
     async getFolders() {
         return new Promise((resolve) => {
@@ -17,8 +17,8 @@ const Storage = {
     },
 
     /**
-     * 폴더 데이터 상태 동기화 및 덮어쓰기 저장
-     * @param {Array} folders - 전체 폴더 배열
+     * 변경된 폴더 목록 저장
+     * @param {Array} folders - 저장할 폴더 배열 전체
      * @returns {Promise<void>}
      */
     async saveFolders(folders) {
@@ -29,8 +29,8 @@ const Storage = {
 
     /**
      * 신규 폴더 생성 및 저장
-     * @param {string} name - 신규 폴더명
-     * @returns {Promise<Object>} 생성된 폴더 객체 
+     * @param {string} name - 생성할 폴더 이름
+     * @returns {Promise<Object>} 생성된 폴더 객체
      */
     async createFolder(name) {
         const folders = await this.getFolders();
@@ -46,9 +46,9 @@ const Storage = {
     },
 
     /**
-     * 특정 폴더 객체 단일 조회
-     * @param {string} id - 검색용 대상 폴더 ID
-     * @returns {Promise<Object|null>} 검색된 폴더 객체 (없을 시 null)
+     * ID로 단일 폴더 반환
+     * @param {string} id - 조회할 폴더 고유 ID
+     * @returns {Promise<Object|null>} 일치하는 폴더 객체, 없으면 null
      */
     async getFolder(id) {
         const folders = await this.getFolders();
@@ -56,9 +56,10 @@ const Storage = {
     },
 
     /**
-     * 특정 폴더의 내부 리스트에 단일 곡 객체 추가
-     * @param {string} folderId - 대상 폴더 ID
-     * @param {Object} songObj - 추가할 대상 곡 데이터 객체
+     * 폴더에 곡 추가 (localId 자동 발급)
+     * @param {string} folderId - 대상 폴더 고유 ID
+     * @param {Object} songObj - 추가할 곡 정보 (videoId, title, artist 포함)
+     * @returns {Promise<void>}
      */
     async addSongToFolder(folderId, songObj) {
         const folders = await this.getFolders();
@@ -69,6 +70,22 @@ const Storage = {
                 ...songObj,
                 localId: 'song_' + Date.now().toString()
             });
+            await this.saveFolders(folders);
+        }
+    },
+
+    /**
+     * localId 기준 곡 삭제
+     * @param {string} folderId - 대상 폴더 고유 ID
+     * @param {string} localId - 삭제할 곡의 로컬 고유 ID
+     * @returns {Promise<void>}
+     */
+    async removeSongFromFolder(folderId, localId) {
+        const folders = await this.getFolders();
+        const folderIndex = folders.findIndex(f => f.id === folderId);
+
+        if (folderIndex > -1) {
+            folders[folderIndex].songs = folders[folderIndex].songs.filter(s => s.localId !== localId);
             await this.saveFolders(folders);
         }
     }

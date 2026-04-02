@@ -1,15 +1,15 @@
 /**
  * Popup UI Controller
- * UI 이벤트 바인딩, 화면 렌더링, 오프스크린 메시지 송신 로직 제어
+ * 뷰 전환, 곡 목록 렌더링, 재생 제어 메시지 송신, 편집 모드 관리
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-    // 뷰 레이아웃 DOM 요소 정의
+    // 뷰 레이아웃 DOM
     const viewFolderList = document.getElementById('view-folder-list');
     const viewPlaylistDetail = document.getElementById('view-playlist-detail');
 
-    // 메인 홈 화면 DOM 요의
+    // 메인 홈 DOM
     const folderListContainer = document.getElementById('folder-list');
     const btnAddFolder = document.getElementById('btn-add-folder');
     const addFolderContainer = document.getElementById('add-folder-container');
@@ -17,33 +17,75 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnSubmitFolder = document.getElementById('btn-submit-folder');
     const btnCancelFolder = document.getElementById('btn-cancel-folder');
 
-    // 플레이리스트 상세 뷰 DOM 요의
+    // 플레이리스트 상세 뷰 DOM
     const btnBack = document.getElementById('btn-back');
     const currentFolderName = document.querySelector('.current-folder-name');
     const songListContainer = document.getElementById('song-list');
     const inputArtist = document.getElementById('input-artist');
     const inputTitle = document.getElementById('input-title');
     const btnAddSong = document.getElementById('btn-add-song');
+    const btnToggleAddSong = document.getElementById('btn-toggle-add-song');
+    const addSongContainer = document.getElementById('add-song-container');
+    const btnCancelSong = document.getElementById('btn-cancel-song');
 
-    // 하단 고정 재생 컨트롤러 DOM 
+    // 하단 플레이어 DOM
     const trackTitleUI = document.querySelector('.track-title');
+    const trackTimeUI = document.getElementById('track-time');
+    const progressBar = document.getElementById('progress-bar');
     const masterPlayBtn = document.querySelector('.play-pause span');
     const masterPlayBtnWrapper = document.querySelector('.play-pause');
 
-    // 클라이언트 UI 로컬 상태 관리 
+    // 로컬 UI 상태
     let currentActiveFolderId = null;
     let isPlayingGlobal = false;
     let currentPlayingVideoId = null;
+    let isEditMode = false; // 편집 모드 (삭제 아이콘 표시 여부)
+
+    // 팝업 재오픈 시 백그라운드에서 현재 재생 상태 동기화
+    chrome.runtime.sendMessage({ type: 'GET_CURRENT_STATE' }, (res) => {
+        if (res && res.currentSong && res.currentSong.videoId) {
+            currentPlayingVideoId = res.currentSong.videoId;
+            isPlayingGlobal = true;
+            trackTitleUI.textContent = `${res.currentSong.title} - ${res.currentSong.artist}`;
+            masterPlayBtn.textContent = 'pause';
+            if (currentActiveFolderId) renderSongs(currentActiveFolderId);
+        }
+    });
+
+    // 오프스크린으로부터 재생 진행률 수신 및 프로그레스 바 갱신
+    chrome.runtime.onMessage.addListener((msg) => {
+        if (msg.type === 'UPDATE_PROGRESS') {
+            const time = msg.currentTime;
+            const dur = msg.duration;
+            if (dur > 0) {
+                progressBar.style.width = `${(time / dur) * 100}%`;
+                trackTimeUI.textContent = `${formatTime(time)} / ${formatTime(dur)}`;
+            }
+        }
+    });
 
     /**
-     * 메인 화면(폴더 목록) 상태 전환
+     * 초 → m:ss 포맷 변환
+     * @param {number} sec - 변환할 초 단위 시간
+     * @returns {string} "m:ss" 형식 문자열
+     */
+    function formatTime(sec) {
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    /**
+     * 메인 폴더 목록 뷰로 전환
      */
     function showFolderListView() {
         currentActiveFolderId = null;
         viewPlaylistDetail.classList.remove('active');
         viewFolderList.classList.add('active');
 
-        // 폼 닫기 초기화
+        // 헤더 폴더 추가 버튼 복원
+        btnAddFolder.style.display = 'flex';
+
         addFolderContainer.style.display = 'none';
         inputFolderName.value = '';
 
@@ -51,8 +93,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     /**
-     * 선택된 폴더 상세 뷰 상태 전환
-     * @param {string} folderId - 대상 폴더 고유 ID
+     * 특정 폴더 상세 뷰로 전환
+     * @param {string} folderId - 표시할 폴더 고유 ID
      */
     async function showPlaylistDetailView(folderId) {
         currentActiveFolderId = folderId;
@@ -64,18 +106,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         viewFolderList.classList.remove('active');
         viewPlaylistDetail.classList.add('active');
 
+        // 헤더 폴더 추가 버튼 숨김
+        btnAddFolder.style.display = 'none';
+
+        // 편집 모드 초기화
+        isEditMode = false;
+        document.getElementById('btn-edit-mode').style.color = '#94a3b8';
+
+        addSongContainer.style.display = 'none';
+        inputArtist.value = '';
+        inputTitle.value = '';
+
         renderSongs(folderId);
     }
 
     /**
-     * 상세 뷰 내부 곡 목록 동적 렌더링
-     * @param {string} folderId - 대상 폴더 고유 ID
+     * 상세 뷰 곡 목록 렌더링
+     * @param {string} folderId - 렌더링할 폴더 고유 ID
      */
     async function renderSongs(folderId) {
         const folder = await Storage.getFolder(folderId);
         songListContainer.innerHTML = '';
 
-        // 배열 공백 시 안내 UI 노출
         if (!folder || !folder.songs || folder.songs.length === 0) {
             songListContainer.innerHTML = `
                 <li style="text-align:center; padding: 24px 10px; color: var(--text-secondary); font-size: 13px;">
@@ -84,56 +136,85 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // 리스트 동적 렌더링
         folder.songs.forEach(song => {
             const li = document.createElement('li');
             li.className = 'song-item';
 
-            // 재생 중인 곡 활성화 스타일 매핑
+            // 현재 재생 곡에 활성 스타일 적용
             if (currentPlayingVideoId === song.videoId) {
                 li.classList.add('playing');
             }
 
-            const isCurrentPlaying = (currentPlayingVideoId === song.videoId && isPlayingGlobal);
+            // 재생 중 여부에 따른 아이콘 결정
+            let icon = 'play_arrow';
+            if (currentPlayingVideoId === song.videoId) {
+                icon = isPlayingGlobal ? 'pause' : 'play_arrow';
+            }
 
+            // 편집 모드: 삭제 아이콘만 / 일반 모드: 재생 버튼만
             li.innerHTML = `
                 <div class="song-info">
                     <span class="song-title">${song.title}</span>
                     <span class="song-artist">${song.artist}</span>
                 </div>
-                <button class="play-song-btn" data-vid="${song.videoId}" data-title="${song.title}" data-artist="${song.artist}">
-                    <span class="material-icons-round">${isCurrentPlaying ? 'equalizer' : 'play_arrow'}</span>
-                </button>
+                <div class="song-actions" style="display:flex; gap:6px; align-items:center;">
+                    <button class="delete-song-btn" data-localid="${song.localId}" style="background:none; border:none; cursor:pointer; color:#ef4444; display:${isEditMode ? 'flex' : 'none'}; align-items:center;">
+                        <span class="material-icons-round" style="font-size:20px;">delete</span>
+                    </button>
+                    <button class="play-song-btn" data-vid="${song.videoId}" data-title="${song.title}" data-artist="${song.artist}" style="display:${isEditMode ? 'none' : 'flex'}; align-items:center;">
+                        <span class="material-icons-round">${icon}</span>
+                    </button>
+                </div>
             `;
             songListContainer.appendChild(li);
         });
 
-        // 렌더링된 재생 버튼 노드에 메시지 송신 이벤트 바인딩
-        const playBtns = songListContainer.querySelectorAll('.play-song-btn');
-        playBtns.forEach(btn => {
+        // 삭제 버튼 이벤트 바인딩
+        songListContainer.querySelectorAll('.delete-song-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (!confirm('해당 노래를 리스트에서 삭제하시겠습니까?')) return;
+                await Storage.removeSongFromFolder(currentActiveFolderId, btn.getAttribute('data-localid'));
+                renderSongs(currentActiveFolderId);
+            });
+        });
+
+        // 재생 버튼 이벤트 바인딩
+        songListContainer.querySelectorAll('.play-song-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const vid = btn.getAttribute('data-vid');
                 const title = btn.getAttribute('data-title');
                 const artist = btn.getAttribute('data-artist');
 
-                chrome.runtime.sendMessage({
-                    type: 'PLAY_SONG',
-                    videoId: vid
-                });
+                // 같은 곡 클릭 시 재생/일시정지 토글
+                if (currentPlayingVideoId === vid) {
+                    if (isPlayingGlobal) {
+                        chrome.runtime.sendMessage({ type: 'PAUSE_SONG' });
+                        masterPlayBtn.textContent = 'play_arrow';
+                        isPlayingGlobal = false;
+                    } else {
+                        chrome.runtime.sendMessage({ type: 'RESUME_SONG' });
+                        masterPlayBtn.textContent = 'pause';
+                        isPlayingGlobal = true;
+                    }
+                    renderSongs(currentActiveFolderId);
+                    return;
+                }
 
+                // 새 곡 재생
+                chrome.runtime.sendMessage({ type: 'PLAY_SONG', videoId: vid, title, artist });
                 currentPlayingVideoId = vid;
                 isPlayingGlobal = true;
                 trackTitleUI.textContent = `${title} - ${artist}`;
                 masterPlayBtn.textContent = 'pause';
 
-                // UI 상태 갱신
                 renderSongs(currentActiveFolderId);
             });
         });
     }
 
     /**
-     * 메인 화면 내 최상위 폴더 목록 동적 렌더링
+     * 폴더 목록 렌더링 (생성 오름차순)
      */
     async function renderFolders() {
         const folders = await Storage.getFolders();
@@ -147,7 +228,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // 폴더 생성 오름차순 기준으로 UI 배치
         folders.sort((a, b) => a.createdAt - b.createdAt).forEach(folder => {
             const li = document.createElement('li');
             li.className = 'folder-item';
@@ -160,7 +240,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // 마스터 컨트롤러 버튼 재생/일시정지 상태 제어
+    // 하단 마스터 재생/일시정지 버튼
     masterPlayBtnWrapper.addEventListener('click', () => {
         if (!currentPlayingVideoId) return;
 
@@ -174,12 +254,34 @@ document.addEventListener('DOMContentLoaded', async () => {
             isPlayingGlobal = true;
         }
 
-        if (currentActiveFolderId) {
-            renderSongs(currentActiveFolderId);
+        if (currentActiveFolderId) renderSongs(currentActiveFolderId);
+    });
+
+    // 곡 추가 폼 토글 (헤더 playlist_add 아이콘)
+    btnToggleAddSong.addEventListener('click', () => {
+        if (addSongContainer.style.display === 'none') {
+            addSongContainer.style.display = 'flex';
+            inputArtist.focus();
+        } else {
+            addSongContainer.style.display = 'none';
         }
     });
 
-    // 신규 폴더 생성 폼 속성 토글 
+    btnCancelSong.addEventListener('click', () => {
+        addSongContainer.style.display = 'none';
+        inputArtist.value = '';
+        inputTitle.value = '';
+    });
+
+    // 편집 모드 토글 (헤더 more_vert 아이콘)
+    document.getElementById('btn-edit-mode').addEventListener('click', () => {
+        isEditMode = !isEditMode;
+        const btn = document.getElementById('btn-edit-mode');
+        btn.style.color = isEditMode ? 'var(--primary-color)' : '#94a3b8';
+        if (currentActiveFolderId) renderSongs(currentActiveFolderId);
+    });
+
+    // 폴더 추가 폼 토글
     btnAddFolder.addEventListener('click', () => {
         addFolderContainer.style.display = 'flex';
         inputFolderName.focus();
@@ -191,7 +293,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     /**
-     * 인풋 조회 및 데이터 추가 로직 처리 구역
+     * 폴더 이름 입력 후 신규 폴더 생성
      */
     async function submitFolder() {
         const folderName = inputFolderName.value.trim();
@@ -208,12 +310,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.key === 'Enter') submitFolder();
     });
 
-    // 네비게이션 뒤로가기 버튼
-    btnBack.addEventListener('click', () => {
-        showFolderListView();
-    });
+    btnBack.addEventListener('click', () => showFolderListView());
 
-    // 곡 검색, 데이터 반환 및 스토리지 저장 제어
+    // 곡 검색 및 스토리지 저장
     btnAddSong.addEventListener('click', async () => {
         const artist = inputArtist.value.trim();
         const title = inputTitle.value.trim();
@@ -223,7 +322,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // 로딩 플래그 아이콘 치환
+        // 로딩 아이콘으로 일시 교체
         btnAddSong.innerHTML = '<span class="material-icons-round">hourglass_empty</span>';
 
         try {
@@ -234,17 +333,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 inputArtist.value = '';
                 inputTitle.value = '';
                 renderSongs(currentActiveFolderId);
+                addSongContainer.style.display = 'none';
             } else {
                 alert('검색 결과가 없습니다.');
             }
         } catch (error) {
             alert(error.message);
         } finally {
-            // 통신 완료 후 아이콘 복원
-            btnAddSong.innerHTML = '<span class="material-icons-round">add</span>';
+            btnAddSong.innerHTML = '<span class="material-icons-round">search</span> 추가';
         }
     });
 
-    // 초기 랜더링 트리거
     renderFolders();
 });
