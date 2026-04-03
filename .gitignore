@@ -63,3 +63,6 @@ Desktop.ini
 *.swp
 *.swo
 *.sublime-workspace
+
+# 크롬 확장프로그램 자동 생성 파일 (DNR Indexed Rulesets)
+_metadata/
