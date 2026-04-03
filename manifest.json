@@ -5,16 +5,35 @@
     "description": "심플한 나만의 플레이리스트 & 백그라운드 오디오 플레이어",
     "permissions": [
         "storage",
-        "offscreen"
+        "offscreen",
+        "declarativeNetRequest",
+        "sidePanel"
     ],
     "host_permissions": [
         "https://*.youtube.com/*",
+        "https://*.youtube-nocookie.com/*",
+        "https://*.googlevideo.com/*",
         "https://www.googleapis.com/*"
     ],
+    "declarative_net_request": {
+        "rule_resources": [
+            {
+                "id": "youtube_rules",
+                "enabled": true,
+                "path": "rules.json"
+            }
+        ]
+    },
+    "side_panel": {
+        "default_path": "html/sidepanel.html"
+    },
     "action": {
         "default_popup": "html/popup.html"
     },
     "background": {
         "service_worker": "js/background.js"
+    },
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'; frame-src https://*.youtube.com https://*.youtube-nocookie.com https://*.googlevideo.com"
     }
 }

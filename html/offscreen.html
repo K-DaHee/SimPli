@@ -2,14 +2,39 @@
 <html>
 
 <head>
+    <meta charset="UTF-8">
     <title>SimPli Audio Engine (Offscreen)</title>
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #youtube-player {
+            width: 640px;
+            height: 360px;
+            background: #111;
+        }
+
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
 </head>
 
 <body>
-    <!-- YouTube iframe이 마운트될 컨테이너 -->
     <div id="youtube-player"></div>
+    <!-- 모든 스크립트는 외부 파일에서 처리 (CSP 준수) -->
     <script src="../js/offscreen.js"></script>
-    <!-- 외부 youtube iframe_api 스크립트 제거 (MV3 CSP 차단 대상) -->
 </body>
 
 </html>
