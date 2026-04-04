@@ -15,6 +15,16 @@
                     "operation": "set",
                     "value": "https://www.youtube.com/"
                 }
+            ],
+            "responseHeaders": [
+                {
+                    "header": "x-frame-options",
+                    "operation": "remove"
+                },
+                {
+                    "header": "content-security-policy",
+                    "operation": "remove"
+                }
             ]
         },
         "condition": {
