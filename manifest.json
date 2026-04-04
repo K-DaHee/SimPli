@@ -7,7 +7,8 @@
         "storage",
         "offscreen",
         "declarativeNetRequest",
-        "sidePanel"
+        "sidePanel",
+        "scripting"
     ],
     "host_permissions": [
         "https://*.youtube.com/*",
@@ -24,6 +25,18 @@
             }
         ]
     },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://www.youtube.com/watch*"
+            ],
+            "js": [
+                "js/content.js"
+            ],
+            "all_frames": true,
+            "run_at": "document_end"
+        }
+    ],
     "side_panel": {
         "default_path": "html/sidepanel.html"
     },

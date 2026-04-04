@@ -145,13 +145,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         trackTitleUI.textContent = song.title;
         updateMasterPlayIcon();
 
-        // 사이드 패널 자동 오픈
-        if (chrome.sidePanel && chrome.sidePanel.open) {
-            chrome.windows.getCurrent((window) => {
-                chrome.sidePanel.open({ windowId: window.id }).catch(() => { });
-            });
-        }
-
         const playMsg = {
             type: 'PLAY_SONG',
             videoId: song.videoId,
