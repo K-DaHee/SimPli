@@ -39,6 +39,15 @@ const API = {
     },
 
     /**
+     * HTML 엔티티를 일반 텍스트로 변환 (예: &#39; -> ')
+     */
+    decodeHtml(html) {
+        const txt = document.createElement('textarea');
+        txt.innerHTML = html;
+        return txt.value;
+    },
+
+    /**
      * 가수명과 곡 제목을 기반으로 공식 음원 검색
      * @param {string} artist - 검색할 가수명
      * @param {string} title - 검색할 곡 제목
@@ -51,7 +60,6 @@ const API = {
             throw new Error('API 키 설정 오류. js/config.js 확인 요망.');
         }
 
-        // 검색어 단순화 (너무 제약이 심하면 결과가 안 나옴)
         const searchQuery = encodeURIComponent(`${artist} ${title}`);
         const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${searchQuery}&key=${YOUTUBE_API_KEY}`;
 
@@ -73,8 +81,8 @@ const API = {
 
                 return {
                     videoId: videoId,
-                    title: item.snippet.title,
-                    artist: item.snippet.channelTitle.replace(' - Topic', ''),
+                    title: this.decodeHtml(item.snippet.title),
+                    artist: this.decodeHtml(item.snippet.channelTitle.replace(' - Topic', '')),
                     thumbnail: item.snippet.thumbnails.default.url,
                     duration: duration // 초 단위 길이 추가
                 };

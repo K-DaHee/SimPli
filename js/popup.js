@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.runtime.sendMessage({ type: 'GET_CURRENT_STATE' }, (response) => {
         if (response && response.currentSong && response.currentSong.videoId) {
             currentPlayingVideoId = response.currentSong.videoId;
-            trackTitleUI.textContent = response.currentSong.title;
+            trackTitleUI.innerHTML = response.currentSong.title; // 엔티티 디코딩
             isPlayingGlobal = response.isPlaying || false;
             updateMasterPlayIcon();
         }
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         currentPlayingVideoId = song.videoId;
         isPlayingGlobal = true;
-        trackTitleUI.textContent = song.title;
+        trackTitleUI.innerHTML = song.title; // 엔티티 디코딩
         updateMasterPlayIcon();
 
         const playMsg = {
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             trackTimeUI.textContent = `${formatTime(message.currentTime)} / ${formatTime(message.duration)}`;
         } else if (message.type === 'SONG_CHANGED') {
             currentPlayingVideoId = message.song.videoId;
-            trackTitleUI.textContent = message.song.title;
+            trackTitleUI.innerHTML = message.song.title; // 엔티티 디코딩
             renderSongs(currentActiveFolderId);
         }
     });
