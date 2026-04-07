@@ -43,6 +43,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             trackTitleUI.innerHTML = response.currentSong.title; // 엔티티 디코딩
             isPlayingGlobal = response.isPlaying || false;
             updateMasterPlayIcon();
+
+            // 재생 정보에 폴더 ID가 있다면 자동으로 해당 폴더 뷰 진입
+            if (response.currentSong.folderId) {
+                currentActiveFolderId = response.currentSong.folderId;
+                Storage.getFolder(currentActiveFolderId).then(folder => {
+                    if (folder) openFolder(folder);
+                });
+            }
         }
     });
 
@@ -150,7 +158,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             videoId: song.videoId,
             title: song.title,
             artist: song.artist,
-            duration: song.duration
+            duration: song.duration,
+            folderId: currentActiveFolderId // [복구] 폴더 정보 전송
         };
 
         setTimeout(() => chrome.runtime.sendMessage(playMsg), 400);
