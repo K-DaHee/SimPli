@@ -7,7 +7,6 @@
         "storage",
         "offscreen",
         "declarativeNetRequest",
-        "sidePanel",
         "scripting"
     ],
     "host_permissions": [
@@ -37,9 +36,6 @@
             "run_at": "document_end"
         }
     ],
-    "side_panel": {
-        "default_path": "html/sidepanel.html"
-    },
     "action": {
         "default_popup": "html/popup.html"
     },
