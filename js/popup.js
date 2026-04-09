@@ -45,13 +45,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.runtime.sendMessage({ type: 'GET_CURRENT_STATE' }, (res) => {
         if (res && res.currentSong && res.currentSong.videoId) {
             currentPlayingVideoId = res.currentSong.videoId;
-            isPlayingGlobal = true;
+            isPlayingGlobal = res.isPlaying;
             trackTitleUI.textContent = `${res.currentSong.title} - ${res.currentSong.artist}`;
-            masterPlayBtn.textContent = 'pause';
+            masterPlayBtn.textContent = isPlayingGlobal ? 'pause' : 'play_arrow';
 
-            // 현재 재생 중인 폴더 정보가 있다면 즉시 해당 플레이리스트 뷰로 진입
-            if (res.currentSong.folderId) {
-                showPlaylistDetailView(res.currentSong.folderId);
+            // 진행률 복구
+            if (res.duration > 0) {
+                progressBar.style.width = `${(res.currentTime / res.duration) * 100}%`;
+                trackTimeUI.textContent = `${formatTime(res.currentTime)} / ${formatTime(res.duration)}`;
+            }
+
+            // 마지막으로 보던 폴더가 있다면 즉시 해당 플레이리스트 뷰로 진입
+            if (res.lastActiveFolderId) {
+                showPlaylistDetailView(res.lastActiveFolderId);
             } else if (currentActiveFolderId) {
                 renderSongs(currentActiveFolderId);
             }
@@ -167,7 +173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <button class="delete-song-btn" data-localid="${song.localId}" style="background:none; border:none; cursor:pointer; color:#ef4444; display:${isEditMode ? 'flex' : 'none'}; align-items:center;">
                         <span class="material-icons-round" style="font-size:20px;">delete</span>
                     </button>
-                    <button class="play-song-btn" data-vid="${song.videoId}" data-title="${song.title}" data-artist="${song.artist}" style="display:${isEditMode ? 'none' : 'flex'}; align-items:center;">
+                    <button class="play-song-btn" data-vid="${song.videoId}" data-title="${song.title}" data-artist="${song.artist}" data-duration="${song.duration || 0}" style="display:${isEditMode ? 'none' : 'flex'}; align-items:center;">
                         <span class="material-icons-round">${icon}</span>
                     </button>
                 </div>
@@ -191,6 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const vid = btn.getAttribute('data-vid');
                 const title = btn.getAttribute('data-title');
                 const artist = btn.getAttribute('data-artist');
+                const duration = parseInt(btn.getAttribute('data-duration'), 10) || 0;
 
                 // 같은 곡 클릭 시 재생/일시정지 토글
                 if (currentPlayingVideoId === vid) {
@@ -213,6 +220,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     videoId: vid,
                     title,
                     artist,
+                    duration,
                     folderId: currentActiveFolderId
                 });
                 currentPlayingVideoId = vid;

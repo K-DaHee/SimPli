@@ -1,67 +1,115 @@
 /**
- * SimPli Background Module
- * 오프스크린 문서 생성 및 재생 명령 중계
+ * Background Module
+ * 사이드 패널 재생 명령 중계 및 상태 관리
  */
 
 let currentSongId = null;
 let isPlayingGlobal = false;
 let currentSongInfo = null;
 
-/**
- * 오프스크린 문서 생성 및 초기화
- */
-async function setupOffscreen() {
-    if (await chrome.offscreen.hasDocument()) return;
+let playingTimer = null;
+let currentTime = 0;
+let currentDuration = 0;
 
-    await chrome.offscreen.createDocument({
-        url: 'html/offscreen.html',
-        reasons: ['AUDIO_PLAYBACK'],
-        justification: 'Background audio playback for YouTube playlists'
+let creating; // 오프스크린 생성 Promise 캐싱
+async function setupOffscreenDocument(path) {
+    const offscreenUrl = chrome.runtime.getURL(path);
+    // 기존 오프스크린 문서가 열려있는지 확인
+    const existingContexts = await chrome.runtime.getContexts({
+        contextTypes: ['OFFSCREEN_DOCUMENT'],
+        documentUrls: [offscreenUrl]
     });
+
+    if (existingContexts.length > 0) {
+        return;
+    }
+
+    if (creating) {
+        await creating;
+    } else {
+        creating = chrome.offscreen.createDocument({
+            url: path,
+            reasons: ['AUDIO_PLAYBACK'],
+            justification: 'background music playback'
+        });
+        await creating;
+        creating = null;
+    }
 }
 
-// 재생 명령 및 상태 제어
+function startTimer() {
+    if (playingTimer !== null) {
+        clearInterval(playingTimer);
+        playingTimer = null;
+    }
+    playingTimer = setInterval(() => {
+        if (currentTime < currentDuration) {
+            currentTime++;
+            chrome.runtime.sendMessage({
+                type: 'UPDATE_PROGRESS',
+                currentTime: currentTime,
+                duration: currentDuration
+            });
+        } else {
+            // 끝까지 도달하면 자동 정지
+            clearInterval(playingTimer);
+            playingTimer = null;
+            isPlayingGlobal = false;
+        }
+    }, 1000);
+}
+
+// 메시지 라우팅 및 상태 제어
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    // 노래 재생 명령 수신
+    // 노래 재생 명령
     if (message.type === 'PLAY_SONG') {
         currentSongId = message.videoId;
         currentSongInfo = message;
         isPlayingGlobal = true;
 
-        setupOffscreen().then(() => {
-            // 오프스크린 엔진으로 실물 재생 명령 전달
+        currentTime = 0;
+        currentDuration = message.duration || 0;
+        startTimer();
+
+        // 오프스크린 준비 후 재생 명령 발송
+        setupOffscreenDocument('html/offscreen.html').then(() => {
             chrome.runtime.sendMessage({
                 type: 'PLAY_YOUTUBE',
                 target: 'offscreen',
                 videoId: message.videoId,
+                title: message.title,
+                artist: message.artist,
                 duration: message.duration
             });
         });
-
-        // UI 상태 동기화용 알림
-        chrome.runtime.sendMessage({
-            type: 'SONG_CHANGED',
-            song: message
-        });
     }
 
-    // 상태 정보 조회 요청
+    // 현재 상태 조회 요청
     else if (message.type === 'GET_CURRENT_STATE') {
         sendResponse({
             currentSong: currentSongInfo,
-            isPlaying: isPlayingGlobal
+            isPlaying: isPlayingGlobal,
+            currentTime: currentTime,
+            duration: currentDuration
         });
     }
 
-    // 일시정지 및 재개 제어
+    // 재생 및 일시정지 제어
     else if (message.type === 'PAUSE_SONG') {
         isPlayingGlobal = false;
+        if (playingTimer !== null) {
+            clearInterval(playingTimer);
+            playingTimer = null;
+        }
         chrome.runtime.sendMessage({ type: 'PAUSE_YOUTUBE', target: 'offscreen' });
     }
     else if (message.type === 'RESUME_SONG') {
         isPlayingGlobal = true;
-        chrome.runtime.sendMessage({ type: 'RESUME_YOUTUBE', target: 'offscreen' });
+        startTimer();
+        setupOffscreenDocument('html/offscreen.html').then(() => {
+            chrome.runtime.sendMessage({ type: 'RESUME_YOUTUBE', target: 'offscreen' });
+        });
     }
 
-    return true;
+    return true; // 비동기 응답(sendResponse)을 위한 값 반환
 });
