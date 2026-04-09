@@ -55,9 +55,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 trackTimeUI.textContent = `${formatTime(res.currentTime)} / ${formatTime(res.duration)}`;
             }
 
-            // 마지막으로 보던 폴더가 있다면 즉시 해당 플레이리스트 뷰로 진입
-            if (res.lastActiveFolderId) {
-                showPlaylistDetailView(res.lastActiveFolderId);
+            // 마지막으로 보던(재생 중인) 폴더가 있다면 즉시 해당 플레이리스트 뷰로 진입
+            if (res.currentSong.folderId) {
+                showPlaylistDetailView(res.currentSong.folderId);
             } else if (currentActiveFolderId) {
                 renderSongs(currentActiveFolderId);
             }
