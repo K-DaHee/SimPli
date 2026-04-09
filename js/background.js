@@ -110,6 +110,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             chrome.runtime.sendMessage({ type: 'RESUME_YOUTUBE', target: 'offscreen' });
         });
     }
+    // 재생 위치 탐색 제어
+    else if (message.type === 'SEEK_SONG') {
+        currentTime = message.time;
+        if (currentTime < 0) currentTime = 0;
+        if (currentTime > currentDuration) currentTime = currentDuration;
 
-    return true; // 비동기 응답(sendResponse)을 위한 값 반환
+        chrome.tabs.query({ url: "https://www.youtube.com/watch*" }, (tabs) => {
+            tabs.forEach(tab => {
+                chrome.tabs.sendMessage(tab.id, { type: 'SEEK_YOUTUBE', time: message.time }).catch(() => { });
+            });
+        });
+        chrome.runtime.sendMessage({ type: 'SEEK_YOUTUBE', time: message.time }).catch(() => { });
+    }
+
+    return true; // 비동기 응답 처리
 });

@@ -51,11 +51,35 @@
         }
     }
 
+    /**
+     * 외부 재생 제어 명령 수신
+     */
+    chrome.runtime.onMessage.addListener((msg) => {
+        if (msg.type === 'SEEK_YOUTUBE') {
+            const video = document.querySelector('video');
+            if (video && isFinite(video.duration)) {
+                video.currentTime = msg.time;
+            }
+        }
+    });
+
     // 100ms 주기로 상태 확인
     setInterval(() => {
         skipAds();
         playVideo();
+
+        /**
+         * 백그라운드 재생 진행률 동기화
+         */
+        const video = document.querySelector('video');
+        if (video && isFinite(video.duration) && !document.querySelector('.ad-showing')) {
+            chrome.runtime.sendMessage({
+                type: 'UPDATE_PROGRESS',
+                currentTime: video.currentTime,
+                duration: video.duration
+            }).catch(() => { });
+        }
     }, 100);
 
-    console.log("광고 감시 중");
+    console.log("광고 감시 및 제어 중");
 })();

@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let isPlayingGlobal = false;
     let currentPlayingVideoId = null;
     let isEditMode = false; // 편집 모드 (삭제 아이콘 표시 여부)
+    let currentDuration = 0;
 
     // 팝업 재오픈 시 백그라운드에서 현재 재생 상태 동기화
     chrome.runtime.sendMessage({ type: 'GET_CURRENT_STATE' }, (res) => {
@@ -70,10 +71,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             const time = msg.currentTime;
             const dur = msg.duration;
             if (dur > 0) {
+                currentDuration = dur;
                 progressBar.style.width = `${(time / dur) * 100}%`;
                 trackTimeUI.textContent = `${formatTime(time)} / ${formatTime(dur)}`;
             }
         }
+    });
+
+    // 재생 진행률 바 이벤트 바인딩
+    const progressContainer = document.getElementById('progress-container');
+    progressContainer.addEventListener('click', (e) => {
+        if (!currentPlayingVideoId || currentDuration <= 0) return;
+
+        const rect = progressContainer.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const width = rect.width;
+        const percentage = Math.max(0, Math.min(1, clickX / width));
+        const seekTime = currentDuration * percentage;
+
+        chrome.runtime.sendMessage({ type: 'SEEK_SONG', time: seekTime });
+
+        progressBar.style.transform = 'none';
+        progressBar.style.width = `${percentage * 100}%`;
+        trackTimeUI.textContent = `${formatTime(seekTime)} / ${formatTime(currentDuration)}`;
     });
 
     /**
