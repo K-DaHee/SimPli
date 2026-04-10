@@ -45,11 +45,6 @@ function startTimer() {
     playingTimer = setInterval(() => {
         if (currentTime < currentDuration) {
             currentTime++;
-            chrome.runtime.sendMessage({
-                type: 'UPDATE_PROGRESS',
-                currentTime: currentTime,
-                duration: currentDuration
-            });
         } else {
             // 끝까지 도달하면 자동 정지
             clearInterval(playingTimer);
