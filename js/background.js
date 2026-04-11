@@ -87,6 +87,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             currentTime: currentTime,
             duration: currentDuration
         });
+        return true;
     }
 
     // 재생 및 일시정지 제어
@@ -118,6 +119,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         chrome.runtime.sendMessage({ type: 'SEEK_YOUTUBE', time: message.time }).catch(() => { });
     }
-
-    return true; // 비동기 응답 처리
 });
