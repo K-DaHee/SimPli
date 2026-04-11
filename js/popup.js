@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let currentActiveFolderId = null;
     let isPlayingGlobal = false;
     let currentPlayingVideoId = null;
+    let playingFolderId = null; // 재생 중인 곡이 속한 폴더 ID
     let isEditMode = false; // 편집 모드 (삭제 아이콘 표시 여부)
     let currentDuration = 0;
 
@@ -46,6 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.runtime.sendMessage({ type: 'GET_CURRENT_STATE' }, (res) => {
         if (res && res.currentSong && res.currentSong.videoId) {
             currentPlayingVideoId = res.currentSong.videoId;
+            playingFolderId = res.currentSong.folderId || null;
             isPlayingGlobal = res.isPlaying;
             trackTitleUI.textContent = `${res.currentSong.title} - ${res.currentSong.artist}`;
             masterPlayBtn.textContent = isPlayingGlobal ? 'pause' : 'play_arrow';
@@ -243,6 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     duration,
                     folderId: currentActiveFolderId
                 });
+                playingFolderId = currentActiveFolderId;
                 currentPlayingVideoId = vid;
                 isPlayingGlobal = true;
                 trackTitleUI.textContent = `${title} - ${artist}`;
@@ -296,6 +299,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (currentActiveFolderId) renderSongs(currentActiveFolderId);
     });
+
+    // 하단 이전/다음 곡 버튼
+    document.getElementById('btn-prev').addEventListener('click', () => navigateTrack(-1));
+    document.getElementById('btn-next').addEventListener('click', () => navigateTrack(1));
+
+    /**
+     * 이전/다음 곡 탐색
+     * @param {number} direction - 이동 방향 (-1: 이전, 1: 다음)
+     */
+    async function navigateTrack(direction) {
+        if (!playingFolderId || !currentPlayingVideoId) return;
+
+        const folder = await Storage.getFolder(playingFolderId);
+        if (!folder || !folder.songs || folder.songs.length === 0) return;
+
+        const currentIndex = folder.songs.findIndex(s => s.videoId === currentPlayingVideoId);
+        if (currentIndex === -1) return;
+
+        // 순환 로직 (마지막 곡 → 첫 곡, 첫 곡 → 마지막 곡)
+        let nextIndex = currentIndex + direction;
+        if (nextIndex < 0) nextIndex = folder.songs.length - 1;
+        if (nextIndex >= folder.songs.length) nextIndex = 0;
+
+        const nextSong = folder.songs[nextIndex];
+
+        chrome.runtime.sendMessage({
+            type: 'PLAY_SONG',
+            videoId: nextSong.videoId,
+            title: nextSong.title,
+            artist: nextSong.artist,
+            duration: nextSong.duration || 0,
+            folderId: playingFolderId
+        });
+
+        currentPlayingVideoId = nextSong.videoId;
+        isPlayingGlobal = true;
+        trackTitleUI.textContent = `${nextSong.title} - ${nextSong.artist}`;
+        masterPlayBtn.textContent = 'pause';
+
+        if (currentActiveFolderId === playingFolderId) {
+            renderSongs(currentActiveFolderId);
+        }
+    }
 
     // 곡 추가 폼 토글 (헤더 playlist_add 아이콘)
     btnToggleAddSong.addEventListener('click', () => {
