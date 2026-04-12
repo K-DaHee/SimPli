@@ -412,8 +412,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     btnBack.addEventListener('click', () => showFolderListView());
 
-    // 곡 검색 및 스토리지 저장
-    btnAddSong.addEventListener('click', async () => {
+    /**
+     * 곡 검색 및 스토리지 저장
+     */
+    async function submitSong() {
         const artist = inputArtist.value.trim();
         const title = inputTitle.value.trim();
 
@@ -442,6 +444,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         } finally {
             btnAddSong.innerHTML = '<span class="material-icons-round">search</span> 추가';
         }
+    }
+
+    // 곡 검색 버튼 및 엔터키 바인딩
+    btnAddSong.addEventListener('click', submitSong);
+    inputArtist.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') submitSong();
+    });
+    inputTitle.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') submitSong();
     });
 
     renderFolders();
