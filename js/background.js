@@ -10,6 +10,7 @@ let currentSongInfo = null;
 let playingTimer = null;
 let currentTime = 0;
 let currentDuration = 0;
+let autoNextTriggered = false; // 자동 다음 곡 중복 방지 플래그
 
 let creating; // 오프스크린 생성 Promise 캐싱
 async function setupOffscreenDocument(path) {
@@ -64,6 +65,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         currentTime = 0;
         currentDuration = message.duration || 0;
+        autoNextTriggered = false; // 수동 재생 시 플래그 즉시 초기화
         startTimer();
 
         // 오프스크린 준비 후 재생 명령 발송
@@ -119,4 +121,72 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         chrome.runtime.sendMessage({ type: 'SEEK_YOUTUBE', time: message.time }).catch(() => { });
     }
+
+    // content.js로부터 실시간 진행률 수신 및 곡 종료 감지
+    else if (message.type === 'UPDATE_PROGRESS') {
+        currentTime = message.currentTime;
+        if (message.duration > 0) currentDuration = message.duration;
+
+        // 새 곡이 재생되기 시작하면 중복 방지 플래그 해제
+        if (currentTime > 0 && currentTime < 2) {
+            autoNextTriggered = false;
+        }
+
+        // 곡 종료 감지: 남은 시간 1초 미만
+        if (currentDuration > 0 && currentDuration - currentTime < 1 && !autoNextTriggered) {
+            autoNextTriggered = true;
+            playNextSong();
+        }
+    }
 });
+
+/**
+ * 다음 곡 자동 재생
+ */
+function playNextSong() {
+    if (!currentSongInfo || !currentSongInfo.folderId) return;
+
+    chrome.storage.local.get(['folders'], (result) => {
+        const folders = result.folders || [];
+        const folder = folders.find(f => f.id === currentSongInfo.folderId);
+        if (!folder || !folder.songs || folder.songs.length === 0) return;
+
+        const currentIndex = folder.songs.findIndex(s => s.videoId === currentSongId);
+        if (currentIndex === -1) return;
+
+        const nextIndex = (currentIndex + 1) % folder.songs.length;
+        const nextSong = folder.songs[nextIndex];
+
+        // 자동 재생
+        currentSongId = nextSong.videoId;
+        currentSongInfo = {
+            videoId: nextSong.videoId,
+            title: nextSong.title,
+            artist: nextSong.artist,
+            duration: nextSong.duration || 0,
+            folderId: currentSongInfo.folderId
+        };
+        isPlayingGlobal = true;
+        currentTime = 0;
+        currentDuration = nextSong.duration || 0;
+        // autoNextTriggered는 새로운 영상이 0~2초 사이로 돌아왔을 때 해제됨 (UPDATE_PROGRESS에서)
+        startTimer();
+
+        setupOffscreenDocument('html/offscreen.html').then(() => {
+            chrome.runtime.sendMessage({
+                type: 'PLAY_YOUTUBE',
+                target: 'offscreen',
+                videoId: nextSong.videoId,
+                title: nextSong.title,
+                artist: nextSong.artist,
+                duration: nextSong.duration
+            });
+        });
+
+        // 팝업 UI 갱신
+        chrome.runtime.sendMessage({
+            type: 'AUTO_NEXT_SONG',
+            song: currentSongInfo
+        }).catch(() => { });
+    });
+}

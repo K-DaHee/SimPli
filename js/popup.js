@@ -78,6 +78,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 trackTimeUI.textContent = `${formatTime(time)} / ${formatTime(dur)}`;
             }
         }
+
+        // 자동 다음 곡 재생 시 UI 갱신
+        if (msg.type === 'AUTO_NEXT_SONG' && msg.song) {
+            currentPlayingVideoId = msg.song.videoId;
+            playingFolderId = msg.song.folderId;
+            isPlayingGlobal = true;
+            trackTitleUI.textContent = `${msg.song.title} - ${msg.song.artist}`;
+            masterPlayBtn.textContent = 'pause';
+            progressBar.style.width = '0%';
+            trackTimeUI.textContent = '0:00 / 0:00';
+
+            if (currentActiveFolderId === playingFolderId) {
+                renderSongs(currentActiveFolderId);
+            }
+        }
     });
 
     // 재생 진행률 바 이벤트 바인딩
@@ -305,8 +320,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn-next').addEventListener('click', () => navigateTrack(1));
 
     /**
-     * 이전/다음 곡 탐색
-     * @param {number} direction - 이동 방향 (-1: 이전, 1: 다음)
+     * 이전/다음 곡 탐색 (방향에 따라 순환)
      */
     async function navigateTrack(direction) {
         if (!playingFolderId || !currentPlayingVideoId) return;

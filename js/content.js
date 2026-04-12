@@ -44,6 +44,9 @@
     function playVideo() {
         const video = document.querySelector('video');
         if (video && video.paused && !document.querySelector('.ad-showing')) {
+            // 곡이 자연 종료된 경우 자동 재생하지 않음
+            if (isFinite(video.duration) && video.duration - video.currentTime < 1) return;
+
             video.play().catch(() => {
                 const playBtn = document.querySelector('.ytp-play-button');
                 if (playBtn) playBtn.click();
