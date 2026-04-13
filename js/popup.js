@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const inputFolderName = document.getElementById('input-folder-name');
     const btnSubmitFolder = document.getElementById('btn-submit-folder');
     const btnCancelFolder = document.getElementById('btn-cancel-folder');
+    const btnFolderEditMode = document.getElementById('btn-folder-edit-mode');
 
     // 플레이리스트 상세 뷰 DOM
     const btnBack = document.getElementById('btn-back');
@@ -40,7 +41,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let isPlayingGlobal = false;
     let currentPlayingVideoId = null;
     let playingFolderId = null; // 재생 중인 곡이 속한 폴더 ID
-    let isEditMode = false; // 편집 모드 (삭제 아이콘 표시 여부)
+    let isEditMode = false; // 곡 편집 모드
+    let isFolderEditMode = false; // 폴더 편집 모드
     let currentDuration = 0;
 
     // 팝업 재오픈 시 백그라운드에서 현재 재생 상태 동기화
@@ -134,6 +136,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // 헤더 폴더 추가 버튼 복원
         btnAddFolder.style.display = 'flex';
+        btnFolderEditMode.style.display = 'flex';
+
+        // 편집 모드 초기화
+        isFolderEditMode = false;
+        btnFolderEditMode.style.color = '#94a3b8';
 
         addFolderContainer.style.display = 'none';
         inputFolderName.value = '';
@@ -155,8 +162,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         viewFolderList.classList.remove('active');
         viewPlaylistDetail.classList.add('active');
 
-        // 헤더 폴더 추가 버튼 숨김
+        // 헤더 폴더 추가 및 편집 버튼 숨김
         btnAddFolder.style.display = 'none';
+        btnFolderEditMode.style.display = 'none';
 
         // 편집 모드 초기화
         isEditMode = false;
@@ -290,11 +298,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             const li = document.createElement('li');
             li.className = 'folder-item';
             li.innerHTML = `
-                <span class="material-icons-round folder-icon">folder</span>
-                <span class="folder-name">${folder.name}</span>
+                <div style="display:flex; align-items:center; gap:12px; flex:1;">
+                    <span class="material-icons-round folder-icon">folder</span>
+                    <span class="folder-name">${folder.name}</span>
+                </div>
+                <button class="delete-folder-btn" data-id="${folder.id}" style="background:none; border:none; cursor:pointer; color:#ef4444; display:${isFolderEditMode ? 'flex' : 'none'}; align-items:center;">
+                    <span class="material-icons-round" style="font-size:20px;">delete</span>
+                </button>
             `;
-            li.addEventListener('click', () => showPlaylistDetailView(folder.id));
+            li.addEventListener('click', () => {
+                if (!isFolderEditMode) showPlaylistDetailView(folder.id);
+            });
             folderListContainer.appendChild(li);
+        });
+
+        // 폴터 삭제 버튼 이벤트 바인딩
+        folderListContainer.querySelectorAll('.delete-folder-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (!confirm('플레이리스트와 내부 모든 노래가 삭제됩니다. 계속하시겠습니까?')) return;
+                await Storage.removeFolder(btn.getAttribute('data-id'));
+                renderFolders();
+            });
         });
     }
 
@@ -379,6 +404,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const btn = document.getElementById('btn-edit-mode');
         btn.style.color = isEditMode ? 'var(--primary-color)' : '#94a3b8';
         if (currentActiveFolderId) renderSongs(currentActiveFolderId);
+    });
+
+    // 폴더 편집 모드 토글
+    btnFolderEditMode.addEventListener('click', () => {
+        isFolderEditMode = !isFolderEditMode;
+        btnFolderEditMode.style.color = isFolderEditMode ? 'var(--primary-color)' : '#94a3b8';
+        renderFolders();
     });
 
     // 폴더 추가 폼 토글

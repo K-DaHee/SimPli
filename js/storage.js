@@ -88,5 +88,16 @@ const Storage = {
             folders[folderIndex].songs = folders[folderIndex].songs.filter(s => s.localId !== localId);
             await this.saveFolders(folders);
         }
+    },
+
+    /**
+     * ID 기준 폴더 삭제
+     * @param {string} id - 삭제할 폴더 고유 ID
+     * @returns {Promise<void>}
+     */
+    async removeFolder(id) {
+        const folders = await this.getFolders();
+        const filtered = folders.filter(f => f.id !== id);
+        await this.saveFolders(filtered);
     }
 };
