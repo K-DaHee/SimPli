@@ -26,9 +26,17 @@
                 <button class="action-btn" id="btn-add-folder" title="새 플레이리스트">
                     <span class="material-icons-round">create_new_folder</span>
                 </button>
-                <button class="action-btn" id="btn-folder-edit-mode" title="편집" style="color: #94a3b8;">
-                    <span class="material-icons-round">more_vert</span>
-                </button>
+                <div class="dropdown-container" id="folder-dropdown-container">
+                    <button class="action-btn" id="btn-folder-edit-mode" title="편집" style="color: #94a3b8;">
+                        <span class="material-icons-round">more_vert</span>
+                    </button>
+                    <div class="dropdown-menu" id="folder-dropdown-menu">
+                        <button class="dropdown-item" id="btn-folder-reorder"><span class="material-icons-round"
+                                style="font-size:18px;">sort</span> 수정</button>
+                        <button class="dropdown-item delete" id="btn-folder-delete"><span class="material-icons-round"
+                                style="font-size:18px;">delete</span> 삭제</button>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -68,9 +76,17 @@
                         <button class="action-btn" id="btn-toggle-add-song" title="새 노래 추가">
                             <span class="material-icons-round">playlist_add</span>
                         </button>
-                        <button class="action-btn" id="btn-edit-mode" title="편집" style="color: #94a3b8;">
-                            <span class="material-icons-round">more_vert</span>
-                        </button>
+                        <div class="dropdown-container" id="song-dropdown-container">
+                            <button class="action-btn" id="btn-edit-mode" title="편집" style="color: #94a3b8;">
+                                <span class="material-icons-round">more_vert</span>
+                            </button>
+                            <div class="dropdown-menu" id="song-dropdown-menu">
+                                <button class="dropdown-item" id="btn-song-reorder"><span class="material-icons-round"
+                                        style="font-size:18px;">sort</span> 수정</button>
+                                <button class="dropdown-item delete" id="btn-song-delete"><span
+                                        class="material-icons-round" style="font-size:18px;">delete</span> 삭제</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

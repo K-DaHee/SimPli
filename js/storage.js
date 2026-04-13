@@ -99,5 +99,30 @@ const Storage = {
         const folders = await this.getFolders();
         const filtered = folders.filter(f => f.id !== id);
         await this.saveFolders(filtered);
+    },
+
+    /**
+     * 폴더 순서 재정의
+     * @param {Array<string>} newIds - 신규 순서의 폴더 ID 배열
+     */
+    async reorderFolders(newIds) {
+        const folders = await this.getFolders();
+        const reordered = newIds.map(id => folders.find(f => f.id === id)).filter(Boolean);
+        await this.saveFolders(reordered);
+    },
+
+    /**
+     * 특정 폴더 내 곡 순서 재정의
+     * @param {string} folderId - 대상 폴더 ID
+     * @param {Array<string>} newLocalIds - 신규 순서의 곡 localId 배열
+     */
+    async reorderSongs(folderId, newLocalIds) {
+        const folders = await this.getFolders();
+        const folderIndex = folders.findIndex(f => f.id === folderId);
+        if (folderIndex > -1) {
+            const originalSongs = folders[folderIndex].songs;
+            folders[folderIndex].songs = newLocalIds.map(id => originalSongs.find(s => s.localId === id)).filter(Boolean);
+            await this.saveFolders(folders);
+        }
     }
 };

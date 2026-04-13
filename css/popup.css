@@ -463,3 +463,112 @@ body {
     font-size: 42px;
     color: var(--primary-color);
 }
+
+/* =========================================
+   드롭다운 메뉴 (Dropdown menu)
+========================================= */
+.dropdown-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 100px;
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    animation: menuFadeIn 0.2s ease-out;
+}
+
+.dropdown-menu.active {
+    display: flex;
+}
+
+@keyframes menuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-item {
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+
+.dropdown-item:hover {
+    background: #f1f5f9;
+    color: var(--primary-color);
+}
+
+.dropdown-item.delete {
+    color: #ef4444;
+}
+
+.dropdown-item.delete:hover {
+    background: #fef2f2;
+}
+
+/* =========================================
+   드래그 앤 드롭 정렬 (Drag & Drop)
+========================================= */
+.drag-handle {
+    color: #cbd5e1;
+    cursor: grab;
+    display: none;
+    margin-right: 4px;
+    transition: 0.2s;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.folder-item:hover .drag-handle,
+.song-item:hover .drag-handle {
+    color: #94a3b8;
+}
+
+/* 정렬 모드 활성화 시 */
+.reorder-mode .play-song-btn,
+.reorder-mode .delete-song-btn,
+.reorder-mode .delete-folder-btn,
+.reorder-mode .dropdown-container {
+    display: none !important;
+}
+
+.reorder-mode .drag-handle {
+    display: flex;
+}
+
+/* 드래그 상태 */
+.dragging {
+    opacity: 0.5;
+    background: #eff6ff;
+    border: 2px dashed var(--primary-color);
+}

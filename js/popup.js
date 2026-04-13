@@ -41,9 +41,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     let isPlayingGlobal = false;
     let currentPlayingVideoId = null;
     let playingFolderId = null; // 재생 중인 곡이 속한 폴더 ID
-    let isEditMode = false; // 곡 편집 모드
-    let isFolderEditMode = false; // 폴더 편집 모드
+    let folderMode = null; // null | 'reorder' | 'delete'
+    let songMode = null;   // null | 'reorder' | 'delete'
     let currentDuration = 0;
+
+    // 드롭다운 외부 클릭 시 닫기
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.dropdown-container')) {
+            document.querySelectorAll('.dropdown-menu.active').forEach(menu => {
+                menu.classList.remove('active');
+            });
+        }
+    });
 
     // 팝업 재오픈 시 백그라운드에서 현재 재생 상태 동기화
     chrome.runtime.sendMessage({ type: 'GET_CURRENT_STATE' }, (res) => {
@@ -139,7 +148,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnFolderEditMode.style.display = 'flex';
 
         // 편집 모드 초기화
-        isFolderEditMode = false;
+        folderMode = null;
+        const folderEditIcon = btnFolderEditMode.querySelector('span');
+        folderEditIcon.textContent = 'more_vert';
         btnFolderEditMode.style.color = '#94a3b8';
 
         addFolderContainer.style.display = 'none';
@@ -167,8 +178,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnFolderEditMode.style.display = 'none';
 
         // 편집 모드 초기화
-        isEditMode = false;
-        document.getElementById('btn-edit-mode').style.color = '#94a3b8';
+        songMode = null;
+        const songEditBtn = document.getElementById('btn-edit-mode');
+        songEditBtn.querySelector('span').textContent = 'more_vert';
+        songEditBtn.style.color = '#94a3b8';
 
         addSongContainer.style.display = 'none';
         inputArtist.value = '';
@@ -194,36 +207,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         folder.songs.forEach(song => {
+            const isActive = currentPlayingVideoId === song.videoId;
+            const icon = isActive && isPlayingGlobal ? 'pause' : 'play_arrow';
+
             const li = document.createElement('li');
-            li.className = 'song-item';
+            li.className = `song-item ${songMode === 'reorder' ? 'reorder-mode' : ''} ${isActive ? 'playing' : ''}`;
+            li.draggable = songMode === 'reorder';
+            li.dataset.localid = song.localId;
 
-            // 현재 재생 곡에 활성 스타일 적용
-            if (currentPlayingVideoId === song.videoId) {
-                li.classList.add('playing');
-            }
-
-            // 재생 중 여부에 따른 아이콘 결정
-            let icon = 'play_arrow';
-            if (currentPlayingVideoId === song.videoId) {
-                icon = isPlayingGlobal ? 'pause' : 'play_arrow';
-            }
-
-            // 편집 모드: 삭제 아이콘만 / 일반 모드: 재생 버튼만
             li.innerHTML = `
-                <div class="song-info">
+                <span class="material-icons-round drag-handle">drag_indicator</span>
+                <div class="song-info" style="flex:1;">
                     <span class="song-title">${song.title}</span>
                     <span class="song-artist">${song.artist}</span>
                 </div>
-                <div class="song-actions" style="display:flex; gap:6px; align-items:center;">
-                    <button class="delete-song-btn" data-localid="${song.localId}" style="background:none; border:none; cursor:pointer; color:#ef4444; display:${isEditMode ? 'flex' : 'none'}; align-items:center;">
-                        <span class="material-icons-round" style="font-size:20px;">delete</span>
-                    </button>
-                    <button class="play-song-btn" data-vid="${song.videoId}" data-title="${song.title}" data-artist="${song.artist}" data-duration="${song.duration || 0}" style="display:${isEditMode ? 'none' : 'flex'}; align-items:center;">
-                        <span class="material-icons-round">${icon}</span>
-                    </button>
-                </div>
+                <button class="delete-song-btn" data-localid="${song.localId}" style="background:none; border:none; cursor:pointer; color:#ef4444; display:${songMode === 'delete' ? 'flex' : 'none'}; align-items:center;">
+                    <span class="material-icons-round" style="font-size:20px;">delete</span>
+                </button>
+                <button class="play-song-btn" data-vid="${song.videoId}" data-title="${song.title}" data-artist="${song.artist}" data-duration="${song.duration || 0}" style="display:${songMode ? 'none' : 'flex'}; align-items:center;">
+                    <span class="material-icons-round">${icon}</span>
+                </button>
             `;
             songListContainer.appendChild(li);
+
+            // 드래그 앤 드롭 이벤트 설정
+            if (songMode === 'reorder') {
+                bindDragEvents(li, songListContainer, async (newIds) => {
+                    await Storage.reorderSongs(folderId, newIds);
+                });
+            }
         });
 
         // 삭제 버튼 이벤트 바인딩
@@ -296,23 +308,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         folders.sort((a, b) => a.createdAt - b.createdAt).forEach(folder => {
             const li = document.createElement('li');
-            li.className = 'folder-item';
+            li.className = `folder-item ${folderMode === 'reorder' ? 'reorder-mode' : ''}`;
+            li.draggable = folderMode === 'reorder';
+            li.dataset.id = folder.id;
+
             li.innerHTML = `
+                <span class="material-icons-round drag-handle">drag_indicator</span>
                 <div style="display:flex; align-items:center; gap:12px; flex:1;">
                     <span class="material-icons-round folder-icon">folder</span>
                     <span class="folder-name">${folder.name}</span>
                 </div>
-                <button class="delete-folder-btn" data-id="${folder.id}" style="background:none; border:none; cursor:pointer; color:#ef4444; display:${isFolderEditMode ? 'flex' : 'none'}; align-items:center;">
+                <button class="delete-folder-btn" data-id="${folder.id}" style="background:none; border:none; cursor:pointer; color:#ef4444; display:${folderMode === 'delete' ? 'flex' : 'none'}; align-items:center;">
                     <span class="material-icons-round" style="font-size:20px;">delete</span>
                 </button>
             `;
             li.addEventListener('click', () => {
-                if (!isFolderEditMode) showPlaylistDetailView(folder.id);
+                if (!folderMode) showPlaylistDetailView(folder.id);
             });
             folderListContainer.appendChild(li);
+
+            // 드래그 앤 드롭 이벤트 설정
+            if (folderMode === 'reorder') {
+                bindDragEvents(li, folderListContainer, async (newIds) => {
+                    await Storage.reorderFolders(newIds);
+                });
+            }
         });
 
-        // 폴터 삭제 버튼 이벤트 바인딩
+        // 폴더 삭제 버튼 이벤트 바인딩
         folderListContainer.querySelectorAll('.delete-folder-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -320,6 +343,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                 await Storage.removeFolder(btn.getAttribute('data-id'));
                 renderFolders();
             });
+        });
+    }
+
+    /**
+     * 드래그 앤 드롭 공통 로직
+     */
+    function bindDragEvents(el, container, onReorder) {
+        el.addEventListener('dragstart', () => el.classList.add('dragging'));
+        el.addEventListener('dragend', async () => {
+            el.classList.remove('dragging');
+            const items = [...container.querySelectorAll('li')];
+            const newIds = items.map(item => item.dataset.id || item.dataset.localid);
+            await onReorder(newIds);
+        });
+
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const draggingItem = container.querySelector('.dragging');
+            const siblings = [...container.querySelectorAll('li:not(.dragging)')];
+            const nextSibling = siblings.find(sibling => {
+                return e.clientY <= sibling.offsetTop + sibling.offsetHeight / 2;
+            });
+            container.insertBefore(draggingItem, nextSibling);
         });
     }
 
@@ -398,18 +444,78 @@ document.addEventListener('DOMContentLoaded', async () => {
         inputTitle.value = '';
     });
 
-    // 편집 모드 토글 (헤더 more_vert 아이콘)
+    // 곡 편집 모드: 헤더 드롭다운 토글
     document.getElementById('btn-edit-mode').addEventListener('click', () => {
-        isEditMode = !isEditMode;
         const btn = document.getElementById('btn-edit-mode');
-        btn.style.color = isEditMode ? 'var(--primary-color)' : '#94a3b8';
+        if (songMode) {
+            // 모드 해제 (check 아이콘 클릭)
+            songMode = null;
+            btn.querySelector('span').textContent = 'more_vert';
+            btn.style.color = '#94a3b8';
+            if (currentActiveFolderId) renderSongs(currentActiveFolderId);
+        } else {
+            // 드롭다운 토글
+            const menu = document.getElementById('song-dropdown-menu');
+            document.querySelectorAll('.dropdown-menu.active').forEach(m => {
+                if (m !== menu) m.classList.remove('active');
+            });
+            menu.classList.toggle('active');
+        }
+    });
+
+    // 곡 수정(정렬) 모드
+    document.getElementById('btn-song-reorder').addEventListener('click', () => {
+        songMode = 'reorder';
+        const btn = document.getElementById('btn-edit-mode');
+        btn.querySelector('span').textContent = 'check';
+        btn.style.color = 'var(--primary-color)';
+        document.getElementById('song-dropdown-menu').classList.remove('active');
         if (currentActiveFolderId) renderSongs(currentActiveFolderId);
     });
 
-    // 폴더 편집 모드 토글
+    // 곡 삭제 모드
+    document.getElementById('btn-song-delete').addEventListener('click', () => {
+        songMode = 'delete';
+        const btn = document.getElementById('btn-edit-mode');
+        btn.querySelector('span').textContent = 'check';
+        btn.style.color = 'var(--primary-color)';
+        document.getElementById('song-dropdown-menu').classList.remove('active');
+        if (currentActiveFolderId) renderSongs(currentActiveFolderId);
+    });
+
+    // 폴더 편집 모드: 헤더 드롭다운 토글
     btnFolderEditMode.addEventListener('click', () => {
-        isFolderEditMode = !isFolderEditMode;
-        btnFolderEditMode.style.color = isFolderEditMode ? 'var(--primary-color)' : '#94a3b8';
+        if (folderMode) {
+            // 모드 해제 (check 아이콘 클릭)
+            folderMode = null;
+            btnFolderEditMode.querySelector('span').textContent = 'more_vert';
+            btnFolderEditMode.style.color = '#94a3b8';
+            renderFolders();
+        } else {
+            // 드롭다운 토글
+            const menu = document.getElementById('folder-dropdown-menu');
+            document.querySelectorAll('.dropdown-menu.active').forEach(m => {
+                if (m !== menu) m.classList.remove('active');
+            });
+            menu.classList.toggle('active');
+        }
+    });
+
+    // 폴더 수정(정렬) 모드
+    document.getElementById('btn-folder-reorder').addEventListener('click', () => {
+        folderMode = 'reorder';
+        btnFolderEditMode.querySelector('span').textContent = 'check';
+        btnFolderEditMode.style.color = 'var(--primary-color)';
+        document.getElementById('folder-dropdown-menu').classList.remove('active');
+        renderFolders();
+    });
+
+    // 폴더 삭제 모드
+    document.getElementById('btn-folder-delete').addEventListener('click', () => {
+        folderMode = 'delete';
+        btnFolderEditMode.querySelector('span').textContent = 'check';
+        btnFolderEditMode.style.color = 'var(--primary-color)';
+        document.getElementById('folder-dropdown-menu').classList.remove('active');
         renderFolders();
     });
 
