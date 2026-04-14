@@ -12,7 +12,7 @@ let currentVideoId = null;
  * 유튜브 시청 페이지(Watch Page) IFrame 생성
  * @param {string} videoId 
  */
-function createPlayer(videoId) {
+function createPlayer(videoId, seekTime = 0) {
     if (iframe) {
         playerContainer.removeChild(iframe);
         iframe = null;
@@ -22,7 +22,7 @@ function createPlayer(videoId) {
     iframe.id = 'offscreen-player';
 
     // [핵심] 실제 유튜브 사이트 로드 (DNR이 X-Frame-Options 제거)
-    iframe.src = `https://www.youtube.com/watch?v=${videoId}&t=0s`;
+    iframe.src = `https://www.youtube.com/watch?v=${videoId}&t=${seekTime}s`;
 
     iframe.width = "400px";
     iframe.height = "300px";
@@ -43,8 +43,19 @@ chrome.runtime.onMessage.addListener((message) => {
         if (iframe) iframe.src = "about:blank";
     }
     else if (message.type === 'RESUME_YOUTUBE') {
-        if (iframe && currentVideoId) {
-            iframe.src = `https://www.youtube.com/watch?v=${currentVideoId}`;
+        // 오프스크린 재생성 시 videoId가 소실될 수 있으므로 메시지에서 복구
+        if (message.videoId) currentVideoId = message.videoId;
+
+        if (!currentVideoId) return;
+
+        const seekTime = Math.floor(message.currentTime || 0);
+
+        if (iframe) {
+            // 기존 iframe이 살아있으면 URL만 교체
+            iframe.src = `https://www.youtube.com/watch?v=${currentVideoId}&t=${seekTime}s`;
+        } else {
+            // 오프스크린 문서가 재생성되어 iframe이 없는 경우 새로 생성
+            createPlayer(currentVideoId, seekTime);
         }
     }
 });

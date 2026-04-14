@@ -1,6 +1,7 @@
 /**
  * Background Module
  * 사이드 패널 재생 명령 중계 및 상태 관리
+ * MV3 서비스 워커 일시 중단에 대비하여 재생 상태를 chrome.storage.local에 영속화
  */
 
 let currentSongId = null;
@@ -11,6 +12,43 @@ let playingTimer = null;
 let currentTime = 0;
 let currentDuration = 0;
 let autoNextTriggered = false; // 자동 다음 곡 중복 방지 플래그
+
+/**
+ * 재생 상태를 스토리지에 영속화
+ */
+function savePlaybackState() {
+    chrome.storage.local.set({
+        playbackState: {
+            currentSongId,
+            isPlayingGlobal,
+            currentSongInfo,
+            currentTime,
+            currentDuration
+        }
+    });
+}
+
+/**
+ * 서비스 워커 재기동 시 스토리지에서 상태 복원
+ */
+async function restorePlaybackState() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(['playbackState'], (result) => {
+            if (result.playbackState) {
+                const s = result.playbackState;
+                currentSongId = s.currentSongId;
+                isPlayingGlobal = s.isPlayingGlobal;
+                currentSongInfo = s.currentSongInfo;
+                currentTime = s.currentTime;
+                currentDuration = s.currentDuration;
+            }
+            resolve();
+        });
+    });
+}
+
+// 서비스 워커 시작 시 상태 복원
+restorePlaybackState();
 
 let creating; // 오프스크린 생성 Promise 캐싱
 async function setupOffscreenDocument(path) {
@@ -67,6 +105,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         currentDuration = message.duration || 0;
         autoNextTriggered = false; // 수동 재생 시 플래그 즉시 초기화
         startTimer();
+        savePlaybackState();
 
         // 오프스크린 준비 후 재생 명령 발송
         setupOffscreenDocument('html/offscreen.html').then(() => {
@@ -81,13 +120,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
     }
 
-    // 현재 상태 조회 요청
+    // 현재 상태 조회 요청 (서비스 워커 재기동 대비 스토리지에서 복원 후 응답)
     else if (message.type === 'GET_CURRENT_STATE') {
-        sendResponse({
-            currentSong: currentSongInfo,
-            isPlaying: isPlayingGlobal,
-            currentTime: currentTime,
-            duration: currentDuration
+        restorePlaybackState().then(() => {
+            sendResponse({
+                currentSong: currentSongInfo,
+                isPlaying: isPlayingGlobal,
+                currentTime: currentTime,
+                duration: currentDuration
+            });
         });
         return true;
     }
@@ -99,13 +140,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             clearInterval(playingTimer);
             playingTimer = null;
         }
+        savePlaybackState();
         chrome.runtime.sendMessage({ type: 'PAUSE_YOUTUBE', target: 'offscreen' });
     }
     else if (message.type === 'RESUME_SONG') {
-        isPlayingGlobal = true;
-        startTimer();
-        setupOffscreenDocument('html/offscreen.html').then(() => {
-            chrome.runtime.sendMessage({ type: 'RESUME_YOUTUBE', target: 'offscreen' });
+        // 서비스 워커 재기동 시 메모리 상태가 소실될 수 있으므로 복원
+        restorePlaybackState().then(() => {
+            isPlayingGlobal = true;
+            startTimer();
+            savePlaybackState();
+            setupOffscreenDocument('html/offscreen.html').then(() => {
+                chrome.runtime.sendMessage({
+                    type: 'RESUME_YOUTUBE',
+                    target: 'offscreen',
+                    videoId: currentSongId,
+                    currentTime: currentTime
+                });
+            });
         });
     }
     // 재생 위치 탐색 제어
@@ -171,6 +222,7 @@ function playNextSong() {
         currentDuration = nextSong.duration || 0;
         // autoNextTriggered는 새로운 영상이 0~2초 사이로 돌아왔을 때 해제됨 (UPDATE_PROGRESS에서)
         startTimer();
+        savePlaybackState();
 
         setupOffscreenDocument('html/offscreen.html').then(() => {
             chrome.runtime.sendMessage({
