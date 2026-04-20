@@ -1,0 +1,48 @@
+[
+    {
+        "id": 1,
+        "priority": 100,
+        "action": {
+            "type": "modifyHeaders",
+            "requestHeaders": [
+                {
+                    "header": "origin",
+                    "operation": "set",
+                    "value": "https://www.youtube.com"
+                },
+                {
+                    "header": "referer",
+                    "operation": "set",
+                    "value": "https://www.youtube.com/"
+                }
+            ],
+            "responseHeaders": [
+                {
+                    "header": "x-frame-options",
+                    "operation": "remove"
+                },
+                {
+                    "header": "content-security-policy",
+                    "operation": "remove"
+                }
+            ]
+        },
+        "condition": {
+            "requestDomains": [
+                "www.youtube.com",
+                "m.youtube.com",
+                "youtube-nocookie.com",
+                "youtube.com",
+                "googlevideo.com"
+            ],
+            "resourceTypes": [
+                "main_frame",
+                "sub_frame",
+                "xmlhttprequest",
+                "media",
+                "script",
+                "other"
+            ]
+        }
+    }
+]

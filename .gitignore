@@ -5,6 +5,9 @@
 # 블로그 작성용 기획안 및 포스트 폴더 무시
 posts/
 
+# 로컬 환경 변수 (API 키 깃허브 유출 방지)
+js/config.js
+
 # 압축 파일, 빌드 결과, 캐시 파일 등
 *.crx
 *.zip
@@ -60,3 +63,6 @@ Desktop.ini
 *.swp
 *.swo
 *.sublime-workspace
+
+# 크롬 확장프로그램 자동 생성 파일 (DNR Indexed Rulesets)
+_metadata/
