@@ -1,13 +1,15 @@
 {
     "manifest_version": 3,
     "name": "SimPli",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "심플한 나만의 플레이리스트 & 백그라운드 오디오 플레이어",
+    "icons": {
+        "128": "icon.png"
+    },
     "permissions": [
         "storage",
         "offscreen",
-        "declarativeNetRequest",
-        "scripting"
+        "declarativeNetRequest"
     ],
     "host_permissions": [
         "https://*.youtube.com/*",
@@ -37,6 +39,7 @@
         }
     ],
     "action": {
+        "default_icon": "icon.png",
         "default_popup": "html/popup.html"
     },
     "background": {
