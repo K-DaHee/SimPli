@@ -35,6 +35,12 @@ jobs:
           # 콤마 보존을 위해 [^"]* 정규식 사용
           sed -i 's/"version": "[^"]*"/"version": "${{ steps.extract_version.outputs.version }}"/' manifest.json
 
+      # Git에 없는 config.js를 GitHub Secret을 활용해 동적 생성
+      - name: API 키를 포함한 config.js 생성
+        run: |
+          mkdir -p js
+          echo "const CONFIG = { YOUTUBE_API_KEY: '${{ secrets.YOUTUBE_API_KEY }}' };" > js/config.js
+
       # 릴리즈 에셋용 압축
       - name: 릴리즈 압축 파일 생성
         run: |
